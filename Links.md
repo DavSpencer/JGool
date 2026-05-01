@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-01 23:33 IR
+- 📱 [thefeed-android-v0.13.3-arm64.apk](https://github.com/DavSpencer/JGool/raw/main/dl/thefeed-android-v0.13.3-arm64.apk) `8.0MB`
+
+---
+
+
 ### 📅 2026-05-01 23:32 IR
 - 📥 [thefeed-client-v0.13.3-windows-amd64.exe](https://github.com/DavSpencer/JGool/raw/main/dl/thefeed-client-v0.13.3-windows-amd64.exe) `2.6MB`
 
