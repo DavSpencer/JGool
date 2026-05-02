@@ -8,17 +8,27 @@ on:
         required: true
         type: string
       quality:
-        description: 'Video Quality (for supported extractors)'
+        description: 'Video Quality'
         required: true
         type: choice
         options:
-          - '480p (MP4 format - Recommended for <95MB)'
-          - '720p (MP4 format)'
-          - '360p (MP4 format)'
-          - 'Audio (MP3 format)'
-          - 'Best (Highest available)'
+          - '1080p MP4'
+          - '720p MP4'
+          - '480p MP4'
+          - '360p MP4'
+          - '1080p WebM'
+          - '720p WebM'
+          - '480p WebM'
+          - '360p WebM'
+          - 'Audio MP3'
+          - 'Best'
+      force_zip:
+        description: 'Force ZIP (even if under 95MB and no password set)'
+        required: false
+        type: boolean
+        default: false
       password:
-        description: 'ZIP Password (Optional - No ZIP applied if empty & under 95MB)'
+        description: 'ZIP Password (Optional)'
         required: false
         type: string
         default: ''
@@ -40,11 +50,11 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends aria2 ffmpeg
-          
+
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
           pip install --upgrade yt-dlp
-          
+
           curl -fsSL https://bun.com/install | bash
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
@@ -82,9 +92,9 @@ jobs:
           _offline_subs = set()
 
           def is_bunkr_url(url): return any(dom in url for dom in BUNKRR_DOMAINS)
-          
+
           def get_slug(url): return __import__("re").search(r"/([a-zA-Z0-9_-]+)$", url).group(1) if __import__("re").search(r"/([a-zA-Z0-9_-]+)$", url) else None
-          
+
           def fetch_api(url):
               slug = get_slug(url)
               if not slug: return None
@@ -120,27 +130,50 @@ jobs:
         run: |
           RAW_URLS="${{ github.event.inputs.url }}"
           QUALITY="${{ github.event.inputs.quality }}"
-          
+
           FORMATTED_URLS=$(echo "$RAW_URLS" | tr ',' ' ' | tr '\n' ' ')
-          
+
           rm -rf tmp_downloads
           mkdir -p tmp_downloads dl
-          
-          if [[ "$QUALITY" == *"720p"* ]]; then
-            YTDLP_F="-f bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best --merge-output-format mp4"
-          elif [[ "$QUALITY" == *"480p"* ]]; then
-            YTDLP_F="-f bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best --merge-output-format mp4"
-          elif [[ "$QUALITY" == *"360p"* ]]; then
-            YTDLP_F="-f bestvideo[ext=mp4][height<=360]+bestaudio[ext=m4a]/best[ext=mp4][height<=360]/best --merge-output-format mp4"
-          elif [[ "$QUALITY" == *"Audio"* ]]; then
-            YTDLP_F="-x --audio-format mp3"
-          else
-            YTDLP_F="--merge-output-format mp4"
-          fi
+
+          # ── Build yt-dlp format string ──────────────────────────────────────
+          case "$QUALITY" in
+            "1080p MP4")
+              YTDLP_F="-f bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best --merge-output-format mp4"
+              ;;
+            "720p MP4")
+              YTDLP_F="-f bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best --merge-output-format mp4"
+              ;;
+            "480p MP4")
+              YTDLP_F="-f bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best --merge-output-format mp4"
+              ;;
+            "360p MP4")
+              YTDLP_F="-f bestvideo[ext=mp4][height<=360]+bestaudio[ext=m4a]/best[ext=mp4][height<=360]/best --merge-output-format mp4"
+              ;;
+            "1080p WebM")
+              YTDLP_F="-f bestvideo[ext=webm][height<=1080]+bestaudio[ext=webm]/bestvideo[height<=1080]+bestaudio/best[height<=1080] --merge-output-format webm"
+              ;;
+            "720p WebM")
+              YTDLP_F="-f bestvideo[ext=webm][height<=720]+bestaudio[ext=webm]/bestvideo[height<=720]+bestaudio/best[height<=720] --merge-output-format webm"
+              ;;
+            "480p WebM")
+              YTDLP_F="-f bestvideo[ext=webm][height<=480]+bestaudio[ext=webm]/bestvideo[height<=480]+bestaudio/best[height<=480] --merge-output-format webm"
+              ;;
+            "360p WebM")
+              YTDLP_F="-f bestvideo[ext=webm][height<=360]+bestaudio[ext=webm]/bestvideo[height<=360]+bestaudio/best[height<=360] --merge-output-format webm"
+              ;;
+            "Audio MP3")
+              YTDLP_F="-x --audio-format mp3"
+              ;;
+            *)
+              # Best — let yt-dlp decide, prefer mp4 container
+              YTDLP_F="--merge-output-format mp4"
+              ;;
+          esac
 
           for URL in $FORMATTED_URLS; do
             if [ -z "$URL" ]; then continue; fi
-            
+
             echo "==========================================="
             echo "Processing URL: $URL"
             echo "==========================================="
@@ -148,13 +181,13 @@ jobs:
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
               python3 bunkr.py "$URL" "tmp_downloads"
-              
+
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
               echo "Downloading from PornHub with yt-dlp..."
-              
+
               COOKIE_ARG=""
               [ -s ph_cookies.txt ] && COOKIE_ARG="--cookies ph_cookies.txt"
-              
+
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
                 --remote-components ejs:github \
@@ -170,9 +203,9 @@ jobs:
               echo "Downloading with yt-dlp..."
               COOKIE_ARG=""
               [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
-              
+
               yt-dlp --js-runtimes bun:$HOME/.bun/bin/bun --remote-components ejs:github $COOKIE_ARG $YTDLP_F -o "tmp_downloads/%(title)s.%(ext)s" "$URL"
-              
+
             else
               echo "Downloading direct file with aria2..."
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
@@ -183,30 +216,36 @@ jobs:
         shell: bash
         run: |
           HAS_PASS="${{ github.event.inputs.password }}"
+          FORCE_ZIP="${{ github.event.inputs.force_zip }}"
+          LIMIT=$((95 * 1024 * 1024))
 
           for FILE in tmp_downloads/*; do
             [ -f "$FILE" ] || continue
             SIZE=$(stat -c%s "$FILE")
-            LIMIT=$((95 * 1024 * 1024))
             BASENAME=$(basename "$FILE")
-            
-            rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}.z"*
-            
-            if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ]; then
+
+            rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}.z"[0-9]*
+
+            # Zip when: password provided, file over 95MB, OR force_zip is true
+            if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ] || [ "$FORCE_ZIP" = "true" ]; then
               echo "Zipping/Splitting: $BASENAME"
-              
+
               PASS_ARG=""
               [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
-              
+
               zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
-              
-              for ZPART in "dl/${BASENAME}".zip "dl/${BASENAME}".z*; do
-                if [ -f "$ZPART" ]; then
-                  basename "$ZPART" >> new_files.txt
-                fi
+
+              # List .zip first, then numbered split parts (.z01, .z02, ...)
+              # Note: glob "z[0-9]*" intentionally excludes ".zip" to avoid duplicates
+              for ZPART in "dl/${BASENAME}.zip"; do
+                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
               done
+              for ZPART in "dl/${BASENAME}".z[0-9]*; do
+                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
+              done
+
             else
-              echo "File is under 95MB. Copying raw file (No Zip)..."
+              echo "File is under 95MB and no ZIP requested. Copying raw file..."
               cp -f "$FILE" "dl/$BASENAME"
               echo "$BASENAME" >> new_files.txt
             fi
@@ -217,39 +256,39 @@ jobs:
         shell: bash
         run: |
           [ ! -f new_files.txt ] && exit 0
-          
+
           REPO="${{ github.repository }}"
           BRANCH="${GITHUB_REF_NAME}"
-          
+
           HEADER="## 🔗 Direct Download Links\n> Click on any link below to start downloading directly.<br><br/>\n\n"
-          
+
           echo "### 📅 $(TZ='Asia/Tehran' date +'%Y-%m-%d %H:%M') IR" > current_run.md
-          
+
           while IFS= read -r FNAME; do
             ENCODED_NAME=$(python3 -c "import urllib.parse; print(urllib.parse.quote(input()))" <<< "$FNAME")
             RAW_URL="https://github.com/$REPO/raw/$BRANCH/dl/$ENCODED_NAME"
-            
+
             DISPLAY_NAME=$(echo "$FNAME" | sed -E 's/android[0-9]+\+_//g; s/-release//g')
-            
+
             export FNAME_ENV="$FNAME"
             SIZE_STR=$(python3 -c "import os; fname = os.environ.get('FNAME_ENV'); path = f'dl/{fname}'; size = os.path.getsize(path) if os.path.exists(path) else 0; print(f'{size/1048576:.1f}MB' if size >= 1048576 else f'{size//1024}KB')")
-            
+
             EXT="${FNAME##*.}"
             case "$EXT" in
-              apk)             ICON="📱" ;;
-              mp4|mkv|avi|mov) ICON="🎬" ;;
-              mp3|m4a|flac|ogg) ICON="🎵" ;;
-              zip|z[0-9]*)     ICON="🗜️" ;;
-              *)               ICON="📥" ;;
+              apk)                  ICON="📱" ;;
+              mp4|mkv|avi|mov|webm) ICON="🎬" ;;
+              mp3|m4a|flac|ogg)     ICON="🎵" ;;
+              zip|z[0-9]*)          ICON="🗜️" ;;
+              *)                    ICON="📥" ;;
             esac
-            
+
             echo "- $ICON [$DISPLAY_NAME]($RAW_URL) \`$SIZE_STR\`" >> current_run.md
             echo "" >> current_run.md
           done < new_files.txt
-          
+
           echo "---" >> current_run.md
           echo "" >> current_run.md
-          
+
           if [ -f Links.md ]; then
             tail -n +4 Links.md > old_links.md 2>/dev/null || touch old_links.md
             echo -e "$HEADER" > Links.md
@@ -259,7 +298,7 @@ jobs:
             echo -e "$HEADER" > Links.md
             cat current_run.md >> Links.md
           fi
-          
+
           rm -f new_files.txt current_run.md
 
       - name: Push to Repository
