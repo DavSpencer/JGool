@@ -2,6 +2,14 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-02 17:54 IR
+- 📱 [thefeed-android-v0.13.5-arm64-v8a.apk](https://github.com/DavSpencer/JGool/raw/main/dl/thefeed-android-v0.13.5-arm64-v8a.apk) `8.0MB`
+
+- 📥 [thefeed-client-v0.13.5-windows-amd64.exe](https://github.com/DavSpencer/JGool/raw/main/dl/thefeed-client-v0.13.5-windows-amd64.exe) `2.6MB`
+
+---
+
+
 ### 📅 2026-05-02 17:08 IR
 - 🗜️ [wordpress-seo-26.3.zip](https://github.com/DavSpencer/JGool/raw/main/dl/wordpress-seo-26.3.zip) `4.7MB`
 
