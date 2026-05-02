@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-02 11:09 IR
+- 🎬 [THE DOBERMAN PINSCHER IS AN INTELLIGENT DOG.webm](https://github.com/DavSpencer/JGool/raw/main/dl/THE%20DOBERMAN%20PINSCHER%20IS%20AN%20INTELLIGENT%20DOG.webm) `6.3MB`
+
+---
+
+
 ### 📅 2026-05-02 11:03 IR
 - 🎬 [THE DOBERMAN PINSCHER IS AN INTELLIGENT DOG.webm](https://github.com/DavSpencer/JGool/raw/main/dl/THE%20DOBERMAN%20PINSCHER%20IS%20AN%20INTELLIGENT%20DOG.webm) `1.5MB`
 
