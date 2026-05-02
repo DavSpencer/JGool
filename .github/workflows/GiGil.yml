@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       force_zip:
-        description: 'Force ZIP (even if under 95MB and no password set)'
+        description: 'Force ZIP (even if under 95MB)'
         required: false
         type: boolean
         default: false
