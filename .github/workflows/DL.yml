@@ -1,4 +1,4 @@
-name: DL
+name: JGool - DL
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       subtitles:
-        description: 'Subtitles — embed into video (MP4 only for embedding)'
+        description: 'Subtitles — embed into video (MP4/MKV only; WebM saves as .vtt)'
         required: false
         type: choice
         default: 'None'
@@ -44,7 +44,7 @@ on:
         options:
           - 'Auto (ZIP only if >95MB)'
           - 'Individual ZIP (one zip per file)'
-          - 'Bundle ZIP (all files in one zip, when multi links added)'
+          - 'Bundle ZIP (all files in one zip)'
       password:
         description: 'ZIP Password (Optional)'
         required: false
@@ -137,7 +137,6 @@ jobs:
               api_resp = fetch_api(url)
               dl_link = decrypt(api_resp) if api_resp else None
               if dl_link:
-                  # Fixed: was urlparse(link) — corrected to urlparse(dl_link)
                   filepath = os.path.join(outdir, urlparse(dl_link).path.rstrip("/").split("/")[-1])
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
@@ -191,8 +190,9 @@ jobs:
           esac
 
           # ── Build subtitle flags ────────────────────────────────────────────
-          # --embed-subs works with MP4/MKV; WebM saves subs as separate .vtt files
-          # SUB_SUFFIX is appended to the output filename: e.g. "Video Title [EN].mp4"
+          # --embed-subs works with MP4/MKV only; WebM saves subs as separate .vtt
+          # --ignore-errors skips unavailable/rate-limited languages instead of failing
+          # SUB_SUFFIX is appended to the output filename e.g. "Video Title [EN].mp4"
           SUB_F=""
           SUB_SUFFIX=""
           case "$SUBTITLES" in
@@ -239,7 +239,6 @@ jobs:
 
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
-              # Bunkr is a direct file host — subtitles not applicable
               python3 bunkr.py "$URL" "tmp_downloads"
 
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
@@ -311,9 +310,10 @@ jobs:
           PASS_ARG=""
           [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
 
-          # ── Helper: list a finished zip + its split parts into new_files.txt ──
+          # ── Helper: list .zip then numbered split parts into new_files.txt ──
+          # z[0-9]* intentionally excludes .zip to prevent duplicate entries
           list_zip_parts() {
-            local BASE="$1"   # e.g. dl/MyFile.zip  (no trailing chars)
+            local BASE="$1"
             local STEM="${BASE%.zip}"
             [ -f "${BASE}" ] && basename "${BASE}" >> new_files.txt
             for PART in "${STEM}".z[0-9]*; do
@@ -321,7 +321,7 @@ jobs:
             done
           }
 
-          # ── Smart bundle name: first-file-stem + "+Nx" if multiple ────────────
+          # ── Smart bundle name: first-file-stem + "+Nx" if multiple ──────────
           make_bundle_name() {
             local COUNT
             COUNT=$(find tmp_downloads -maxdepth 1 -type f | wc -l)
@@ -329,8 +329,7 @@ jobs:
             FIRST=$(find tmp_downloads -maxdepth 1 -type f | sort | head -1)
             local STEM
             STEM=$(basename "$FIRST")
-            STEM="${STEM%.*}"   # strip extension
-            # trim to 40 chars so the full filename stays reasonable
+            STEM="${STEM%.*}"
             STEM="${STEM:0:40}"
             local TIMESTAMP
             TIMESTAMP=$(TZ='Asia/Tehran' date +'%Y%m%d_%H%M')
@@ -342,7 +341,7 @@ jobs:
           }
 
           # ════════════════════════════════════════════════════════════════════
-          # BUNDLE ZIP — all files packed into one archive
+          # BUNDLE ZIP — all files packed into one archive, split if >95MB
           # ════════════════════════════════════════════════════════════════════
           if [ "$ZIP_MODE" = "Bundle ZIP (all files in one zip)" ]; then
             BUNDLE_NAME=$(make_bundle_name)
@@ -351,7 +350,7 @@ jobs:
             list_zip_parts "dl/${BUNDLE_NAME}"
 
           # ════════════════════════════════════════════════════════════════════
-          # INDIVIDUAL ZIP — one zip per file (always zipped)
+          # INDIVIDUAL ZIP — one zip per file (always zipped), split if >95MB
           # ════════════════════════════════════════════════════════════════════
           elif [ "$ZIP_MODE" = "Individual ZIP (one zip per file)" ]; then
             for FILE in tmp_downloads/*; do
@@ -364,7 +363,7 @@ jobs:
             done
 
           # ════════════════════════════════════════════════════════════════════
-          # AUTO — zip/split only when a file exceeds 95MB or password is set
+          # AUTO — zip/split only when file exceeds 95MB or password is set
           # ════════════════════════════════════════════════════════════════════
           else
             for FILE in tmp_downloads/*; do
