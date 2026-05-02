@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       subtitles:
-        description: 'Subtitles — embed into video (yt-dlp sources only; MP4/MKV only for embedding)'
+        description: 'Subtitles — embed into video (MP4 only for embedding)'
         required: false
         type: choice
         default: 'None'
