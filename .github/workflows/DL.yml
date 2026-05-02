@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Target URLs (Separate with space, comma, or new line)'
+        description: 'URLs — one per line. To rename: URL | Custom Name (extension auto-kept)'
         required: true
         type: string
       quality:
@@ -150,8 +150,6 @@ jobs:
           QUALITY="${{ github.event.inputs.quality }}"
           SUBTITLES="${{ github.event.inputs.subtitles }}"
 
-          FORMATTED_URLS=$(echo "$RAW_URLS" | tr ',' ' ' | tr '\n' ' ')
-
           rm -rf tmp_downloads
           mkdir -p tmp_downloads dl
 
@@ -231,16 +229,36 @@ jobs:
               ;;
           esac
 
-          for URL in $FORMATTED_URLS; do
-            if [ -z "$URL" ]; then continue; fi
+          # ── Parse URLs line by line — supports "URL | Custom Name" syntax ──
+          # Each line can be:  https://example.com/file.apk | My App Name
+          # or just:           https://example.com/file.apk
+          # Commas are treated as line separators for backward compatibility.
+          mapfile -t URL_LINES < <(echo "$RAW_URLS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
+
+          for LINE in "${URL_LINES[@]}"; do
+            # Split on " | " to get URL and optional custom name
+            if echo "$LINE" | grep -q ' | '; then
+              ACTUAL_URL=$(echo "$LINE" | sed 's/ |.*//' | xargs)
+              CUSTOM_NAME=$(echo "$LINE" | sed 's/.*| //' | xargs)
+            else
+              ACTUAL_URL=$(echo "$LINE" | xargs)
+              CUSTOM_NAME=""
+            fi
+
+            [ -z "$ACTUAL_URL" ] && continue
+            URL="$ACTUAL_URL"
 
             echo "==========================================="
             echo "Processing URL: $URL"
+            [ -n "$CUSTOM_NAME" ] && echo "Custom name : ${CUSTOM_NAME}"
             echo "==========================================="
+
+            # Snapshot tmp_downloads BEFORE download so we can detect new files
+            # and rename them when a custom name is provided (aria2/bunkr/magnet)
+            ls tmp_downloads/ 2>/dev/null | sort > /tmp/before_dl.txt || touch /tmp/before_dl.txt
 
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
-              # Bunkr is a direct file host — subtitles not applicable
               python3 bunkr.py "$URL" "tmp_downloads"
 
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
@@ -248,6 +266,12 @@ jobs:
 
               COOKIE_ARG=""
               [ -s ph_cookies.txt ] && COOKIE_ARG="--cookies ph_cookies.txt"
+
+              if [ -n "$CUSTOM_NAME" ]; then
+                YTDLP_OUT="tmp_downloads/${CUSTOM_NAME}${SUB_SUFFIX}.%(ext)s"
+              else
+                YTDLP_OUT="tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s"
+              fi
 
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
@@ -258,7 +282,7 @@ jobs:
                 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
                 --add-header "Referer:https://www.pornhub.com/" \
                 --add-header "Accept-Language:en-US,en;q=0.9" \
-                -o "tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s" \
+                -o "$YTDLP_OUT" \
                 "$URL"
 
             elif echo "$URL" | grep -qE "(youtube\.com|youtu\.be|twitch\.tv|reddit\.com|vimeo|soundcloud)"; then
@@ -266,13 +290,19 @@ jobs:
               COOKIE_ARG=""
               [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
 
+              if [ -n "$CUSTOM_NAME" ]; then
+                YTDLP_OUT="tmp_downloads/${CUSTOM_NAME}${SUB_SUFFIX}.%(ext)s"
+              else
+                YTDLP_OUT="tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s"
+              fi
+
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
                 --remote-components ejs:github \
                 $COOKIE_ARG \
                 $YTDLP_F \
                 $SUB_F \
-                -o "tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s" \
+                -o "$YTDLP_OUT" \
                 "$URL"
 
             elif echo "$URL" | grep -qi "^magnet:"; then
@@ -298,8 +328,24 @@ jobs:
 
             else
               echo "Downloading direct file with aria2..."
-              # aria2 is for direct file downloads — subtitles not applicable
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
+            fi
+
+            # ── Post-download rename (bunkr / aria2 / magnet only) ───────────
+            # yt-dlp already uses CUSTOM_NAME in its -o template above.
+            # For other sources: diff the directory snapshot to find new files,
+            # then rename each one to CUSTOM_NAME (+ SUB_SUFFIX) keeping extension.
+            if [ -n "$CUSTOM_NAME" ]; then
+              ls tmp_downloads/ 2>/dev/null | sort > /tmp/after_dl.txt || touch /tmp/after_dl.txt
+              mapfile -t NEW_FILES < <(comm -13 /tmp/before_dl.txt /tmp/after_dl.txt)
+              for NEW_FILE in "${NEW_FILES[@]}"; do
+                EXT="${NEW_FILE##*.}"
+                NEW_NAME="${CUSTOM_NAME}${SUB_SUFFIX}.${EXT}"
+                if [ "$NEW_FILE" != "$NEW_NAME" ]; then
+                  echo "Renaming: $NEW_FILE → $NEW_NAME"
+                  mv "tmp_downloads/${NEW_FILE}" "tmp_downloads/${NEW_NAME}"
+                fi
+              done
             fi
           done
 
