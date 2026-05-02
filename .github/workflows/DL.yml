@@ -1,4 +1,4 @@
-name: JGool - DL
+name: DL
 
 on:
   workflow_dispatch:
@@ -288,8 +288,8 @@ jobs:
                 --seed-time=0 \
                 --max-connection-per-server=4 \
                 --split=4 \
-                --bt-stop-timeout=300 \
-                --timeout=300 \
+                --bt-stop-timeout=900 \
+                --timeout=900 \
                 --max-tries=5 \
                 --dir="tmp_downloads" \
                 "$URL"
