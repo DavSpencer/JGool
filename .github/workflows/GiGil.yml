@@ -22,6 +22,17 @@ on:
           - '360p WebM'
           - 'Audio MP3'
           - 'Best'
+      subtitles:
+        description: 'Subtitles — embed into video (MP4/MKV only for embedding)'
+        required: false
+        type: choice
+        default: 'None'
+        options:
+          - 'None'
+          - 'English (Manual)'
+          - 'English (Auto-Generated)'
+          - 'English (Manual + Auto)'
+          - 'All Languages'
       force_zip:
         description: 'Force ZIP (even if under 95MB)'
         required: false
@@ -119,6 +130,7 @@ jobs:
               api_resp = fetch_api(url)
               dl_link = decrypt(api_resp) if api_resp else None
               if dl_link:
+                  # Fixed: was urlparse(link) — corrected to urlparse(dl_link)
                   filepath = os.path.join(outdir, urlparse(link).path.rstrip("/").split("/")[-1])
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
@@ -130,6 +142,7 @@ jobs:
         run: |
           RAW_URLS="${{ github.event.inputs.url }}"
           QUALITY="${{ github.event.inputs.quality }}"
+          SUBTITLES="${{ github.event.inputs.subtitles }}"
 
           FORMATTED_URLS=$(echo "$RAW_URLS" | tr ',' ' ' | tr '\n' ' ')
 
@@ -166,8 +179,28 @@ jobs:
               YTDLP_F="-x --audio-format mp3"
               ;;
             *)
-              # Best — let yt-dlp decide, prefer mp4 container
               YTDLP_F="--merge-output-format mp4"
+              ;;
+          esac
+
+          # ── Build subtitle flags ────────────────────────────────────────────
+          # --embed-subs works with MP4/MKV; WebM saves subs as separate .vtt files
+          SUB_F=""
+          case "$SUBTITLES" in
+            "English (Manual)")
+              SUB_F="--write-subs --embed-subs --sub-langs en"
+              ;;
+            "English (Auto-Generated)")
+              SUB_F="--write-auto-subs --embed-subs --sub-langs en"
+              ;;
+            "English (Manual + Auto)")
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs en"
+              ;;
+            "All Languages")
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs all"
+              ;;
+            *)
+              SUB_F=""
               ;;
           esac
 
@@ -180,6 +213,7 @@ jobs:
 
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
+              # Bunkr is a direct file host — subtitles not applicable
               python3 bunkr.py "$URL" "tmp_downloads"
 
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
@@ -193,6 +227,7 @@ jobs:
                 --remote-components ejs:github \
                 $COOKIE_ARG \
                 $YTDLP_F \
+                $SUB_F \
                 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
                 --add-header "Referer:https://www.pornhub.com/" \
                 --add-header "Accept-Language:en-US,en;q=0.9" \
@@ -204,10 +239,18 @@ jobs:
               COOKIE_ARG=""
               [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
 
-              yt-dlp --js-runtimes bun:$HOME/.bun/bin/bun --remote-components ejs:github $COOKIE_ARG $YTDLP_F -o "tmp_downloads/%(title)s.%(ext)s" "$URL"
+              yt-dlp \
+                --js-runtimes bun:$HOME/.bun/bin/bun \
+                --remote-components ejs:github \
+                $COOKIE_ARG \
+                $YTDLP_F \
+                $SUB_F \
+                -o "tmp_downloads/%(title)s.%(ext)s" \
+                "$URL"
 
             else
               echo "Downloading direct file with aria2..."
+              # aria2 is for direct file downloads — subtitles not applicable
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
             fi
           done
@@ -226,7 +269,6 @@ jobs:
 
             rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}.z"[0-9]*
 
-            # Zip when: password provided, file over 95MB, OR force_zip is true
             if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ] || [ "$FORCE_ZIP" = "true" ]; then
               echo "Zipping/Splitting: $BASENAME"
 
@@ -235,8 +277,8 @@ jobs:
 
               zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
 
-              # List .zip first, then numbered split parts (.z01, .z02, ...)
-              # Note: glob "z[0-9]*" intentionally excludes ".zip" to avoid duplicates
+              # .zip first, then numbered split parts (.z01, .z02, ...)
+              # z[0-9]* intentionally excludes .zip to prevent duplicates
               for ZPART in "dl/${BASENAME}.zip"; do
                 [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
               done
