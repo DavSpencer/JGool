@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-02 23:19 IR
+- 📥 [kstuff.elf](https://github.com/DavSpencer/JGool/raw/main/dl/kstuff.elf) `1.5MB`
+
+---
+
+
 ### 📅 2026-05-02 22:52 IR
 - 📥 [Why My Websites Always Look Premium & Expensive (Made with Elementor) [EN].en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/Why%20My%20Websites%20Always%20Look%20Premium%20%26%20Expensive%20%28Made%20with%20Elementor%29%20%5BEN%5D.en.vtt) `84KB`
 
