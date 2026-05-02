@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       subtitles:
-        description: 'Subtitles — embed into video (MP4/MKV only for embedding)'
+        description: 'Subtitles — embed into video (yt-dlp sources only; MP4/MKV only for embedding)'
         required: false
         type: choice
         default: 'None'
@@ -32,7 +32,10 @@ on:
           - 'English (Manual)'
           - 'English (Auto-Generated)'
           - 'English (Manual + Auto)'
-          - 'All Languages'
+          - 'Persian (Manual)'
+          - 'Persian (Auto-Generated)'
+          - 'Persian (Manual + Auto)'
+          - 'Persian + English'
       force_zip:
         description: 'Force ZIP (even if under 95MB)'
         required: false
@@ -196,8 +199,17 @@ jobs:
             "English (Manual + Auto)")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs en"
               ;;
-            "All Languages")
-              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs all"
+            "Persian (Manual)")
+              SUB_F="--write-subs --embed-subs --sub-langs fa"
+              ;;
+            "Persian (Auto-Generated)")
+              SUB_F="--write-auto-subs --embed-subs --sub-langs fa"
+              ;;
+            "Persian (Manual + Auto)")
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa"
+              ;;
+            "Persian + English")
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa,en"
               ;;
             *)
               SUB_F=""
