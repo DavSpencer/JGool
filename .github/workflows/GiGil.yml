@@ -119,7 +119,7 @@ jobs:
               api_resp = fetch_api(url)
               dl_link = decrypt(api_resp) if api_resp else None
               if dl_link:
-                  filepath = os.path.join(outdir, urlparse(dl_link).path.rstrip("/").split("/")[-1])
+                  filepath = os.path.join(outdir, urlparse(link).path.rstrip("/").split("/")[-1])
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
                       for c in resp.iter_content(8192): f.write(c) if c else None
