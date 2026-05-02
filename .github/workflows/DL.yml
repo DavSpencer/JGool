@@ -1,4 +1,4 @@
-name: JGool - DL
+name: DL
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       subtitles:
-        description: 'Subtitles — embed into video (MP4 only)'
+        description: 'Subtitles — embed into video (MP4 only for embedding)'
         required: false
         type: choice
         default: 'None'
@@ -36,11 +36,15 @@ on:
           - 'Persian (Auto-Generated)'
           - 'Persian (Manual + Auto)'
           - 'Persian + English'
-      force_zip:
-        description: 'Force ZIP (even if under 95MB)'
+      zip_mode:
+        description: 'ZIP Mode'
         required: false
-        type: boolean
-        default: false
+        type: choice
+        default: 'Auto (ZIP only if >95MB)'
+        options:
+          - 'Auto (ZIP only if >95MB)'
+          - 'Individual ZIP (one zip per file)'
+          - 'Bundle ZIP (all files in one zip, when multi links added)'
       password:
         description: 'ZIP Password (Optional)'
         required: false
@@ -134,7 +138,7 @@ jobs:
               dl_link = decrypt(api_resp) if api_resp else None
               if dl_link:
                   # Fixed: was urlparse(link) — corrected to urlparse(dl_link)
-                  filepath = os.path.join(outdir, urlparse(link).path.rstrip("/").split("/")[-1])
+                  filepath = os.path.join(outdir, urlparse(dl_link).path.rstrip("/").split("/")[-1])
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
                       for c in resp.iter_content(8192): f.write(c) if c else None
@@ -188,31 +192,41 @@ jobs:
 
           # ── Build subtitle flags ────────────────────────────────────────────
           # --embed-subs works with MP4/MKV; WebM saves subs as separate .vtt files
+          # SUB_SUFFIX is appended to the output filename: e.g. "Video Title [EN].mp4"
           SUB_F=""
+          SUB_SUFFIX=""
           case "$SUBTITLES" in
             "English (Manual)")
               SUB_F="--write-subs --embed-subs --sub-langs en --ignore-errors"
+              SUB_SUFFIX=" [EN]"
               ;;
             "English (Auto-Generated)")
               SUB_F="--write-auto-subs --embed-subs --sub-langs en --ignore-errors"
+              SUB_SUFFIX=" [EN]"
               ;;
             "English (Manual + Auto)")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs en --ignore-errors"
+              SUB_SUFFIX=" [EN]"
               ;;
             "Persian (Manual)")
               SUB_F="--write-subs --embed-subs --sub-langs fa --ignore-errors"
+              SUB_SUFFIX=" [FA]"
               ;;
             "Persian (Auto-Generated)")
               SUB_F="--write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
+              SUB_SUFFIX=" [FA]"
               ;;
             "Persian (Manual + Auto)")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
+              SUB_SUFFIX=" [FA]"
               ;;
             "Persian + English")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa,en --ignore-errors"
+              SUB_SUFFIX=" [EN-FA]"
               ;;
             *)
               SUB_F=""
+              SUB_SUFFIX=""
               ;;
           esac
 
@@ -243,7 +257,7 @@ jobs:
                 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
                 --add-header "Referer:https://www.pornhub.com/" \
                 --add-header "Accept-Language:en-US,en;q=0.9" \
-                -o "tmp_downloads/%(title)s.%(ext)s" \
+                -o "tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s" \
                 "$URL"
 
             elif echo "$URL" | grep -qE "(youtube\.com|youtu\.be|twitch\.tv|reddit\.com|vimeo|soundcloud)"; then
@@ -257,12 +271,32 @@ jobs:
                 $COOKIE_ARG \
                 $YTDLP_F \
                 $SUB_F \
-                -o "tmp_downloads/%(title)s.%(ext)s" \
+                -o "tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s" \
+                "$URL"
+
+            elif echo "$URL" | grep -qi "^magnet:"; then
+              # ⚠️  TORRENT / MAGNET WARNING:
+              # GitHub Actions jobs have a 6-hour hard limit. Large or slow torrents
+              # WILL get killed mid-download with no output saved. This works reliably
+              # only for small (<1GB) and well-seeded torrents. There is also no
+              # guarantee the runner IP is not blocked by some trackers.
+              echo "Magnet/Torrent detected — downloading with aria2c..."
+              echo "⚠️  WARNING: GitHub Actions has a 6h job limit. Large torrents may not finish."
+              aria2c \
+                --enable-dht=true \
+                --enable-peer-exchange=true \
+                --bt-save-metadata=true \
+                --seed-time=0 \
+                --max-connection-per-server=4 \
+                --split=4 \
+                --bt-stop-timeout=300 \
+                --timeout=300 \
+                --max-tries=5 \
+                --dir="tmp_downloads" \
                 "$URL"
 
             else
               echo "Downloading direct file with aria2..."
-              # aria2 is for direct file downloads — subtitles not applicable
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
             fi
           done
@@ -271,39 +305,86 @@ jobs:
         shell: bash
         run: |
           HAS_PASS="${{ github.event.inputs.password }}"
-          FORCE_ZIP="${{ github.event.inputs.force_zip }}"
+          ZIP_MODE="${{ github.event.inputs.zip_mode }}"
           LIMIT=$((95 * 1024 * 1024))
 
-          for FILE in tmp_downloads/*; do
-            [ -f "$FILE" ] || continue
-            SIZE=$(stat -c%s "$FILE")
-            BASENAME=$(basename "$FILE")
+          PASS_ARG=""
+          [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
 
-            rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}.z"[0-9]*
+          # ── Helper: list a finished zip + its split parts into new_files.txt ──
+          list_zip_parts() {
+            local BASE="$1"   # e.g. dl/MyFile.zip  (no trailing chars)
+            local STEM="${BASE%.zip}"
+            [ -f "${BASE}" ] && basename "${BASE}" >> new_files.txt
+            for PART in "${STEM}".z[0-9]*; do
+              [ -f "$PART" ] && basename "$PART" >> new_files.txt
+            done
+          }
 
-            if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ] || [ "$FORCE_ZIP" = "true" ]; then
-              echo "Zipping/Splitting: $BASENAME"
-
-              PASS_ARG=""
-              [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
-
-              zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
-
-              # .zip first, then numbered split parts (.z01, .z02, ...)
-              # z[0-9]* intentionally excludes .zip to prevent duplicates
-              for ZPART in "dl/${BASENAME}.zip"; do
-                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
-              done
-              for ZPART in "dl/${BASENAME}".z[0-9]*; do
-                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
-              done
-
+          # ── Smart bundle name: first-file-stem + "+Nx" if multiple ────────────
+          make_bundle_name() {
+            local COUNT
+            COUNT=$(find tmp_downloads -maxdepth 1 -type f | wc -l)
+            local FIRST
+            FIRST=$(find tmp_downloads -maxdepth 1 -type f | sort | head -1)
+            local STEM
+            STEM=$(basename "$FIRST")
+            STEM="${STEM%.*}"   # strip extension
+            # trim to 40 chars so the full filename stays reasonable
+            STEM="${STEM:0:40}"
+            local TIMESTAMP
+            TIMESTAMP=$(TZ='Asia/Tehran' date +'%Y%m%d_%H%M')
+            if [ "$COUNT" -gt 1 ]; then
+              echo "${STEM}+$((COUNT-1))more_${TIMESTAMP}.zip"
             else
-              echo "File is under 95MB and no ZIP requested. Copying raw file..."
-              cp -f "$FILE" "dl/$BASENAME"
-              echo "$BASENAME" >> new_files.txt
+              echo "${STEM}_${TIMESTAMP}.zip"
             fi
-          done
+          }
+
+          # ════════════════════════════════════════════════════════════════════
+          # BUNDLE ZIP — all files packed into one archive
+          # ════════════════════════════════════════════════════════════════════
+          if [ "$ZIP_MODE" = "Bundle ZIP (all files in one zip)" ]; then
+            BUNDLE_NAME=$(make_bundle_name)
+            echo "Bundling all files into: $BUNDLE_NAME"
+            zip $PASS_ARG -s 95m "dl/${BUNDLE_NAME}" -j tmp_downloads/*
+            list_zip_parts "dl/${BUNDLE_NAME}"
+
+          # ════════════════════════════════════════════════════════════════════
+          # INDIVIDUAL ZIP — one zip per file (always zipped)
+          # ════════════════════════════════════════════════════════════════════
+          elif [ "$ZIP_MODE" = "Individual ZIP (one zip per file)" ]; then
+            for FILE in tmp_downloads/*; do
+              [ -f "$FILE" ] || continue
+              BASENAME=$(basename "$FILE")
+              rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}".z[0-9]*
+              echo "Zipping: $BASENAME"
+              zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
+              list_zip_parts "dl/${BASENAME}.zip"
+            done
+
+          # ════════════════════════════════════════════════════════════════════
+          # AUTO — zip/split only when a file exceeds 95MB or password is set
+          # ════════════════════════════════════════════════════════════════════
+          else
+            for FILE in tmp_downloads/*; do
+              [ -f "$FILE" ] || continue
+              SIZE=$(stat -c%s "$FILE")
+              BASENAME=$(basename "$FILE")
+              rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}".z[0-9]*
+
+              if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ]; then
+                echo "Zipping/Splitting: $BASENAME"
+                zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
+                list_zip_parts "dl/${BASENAME}.zip"
+              else
+                echo "Under 95MB, no password — copying raw: $BASENAME"
+                cp -f "$FILE" "dl/$BASENAME"
+                echo "$BASENAME" >> new_files.txt
+              fi
+            done
+          fi
+
           rm -rf tmp_downloads
 
       - name: Update Links.md
