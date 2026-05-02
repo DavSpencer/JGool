@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-02 23:34 IR
+- 🎵 [امارات با قدرت رویایی ج.ا.mp3](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%A7%D9%85%D8%A7%D8%B1%D8%A7%D8%AA%20%D8%A8%D8%A7%20%D9%82%D8%AF%D8%B1%D8%AA%20%D8%B1%D9%88%DB%8C%D8%A7%DB%8C%DB%8C%20%D8%AC.%D8%A7.mp3) `26.6MB`
+
+---
+
+
 ### 📅 2026-05-02 23:19 IR
 - 📥 [kstuff.elf](https://github.com/DavSpencer/JGool/raw/main/dl/kstuff.elf) `1.5MB`
 
