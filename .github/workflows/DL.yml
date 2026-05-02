@@ -288,8 +288,8 @@ jobs:
                 --seed-time=0 \
                 --max-connection-per-server=4 \
                 --split=4 \
-                --bt-stop-timeout=900 \
-                --timeout=900 \
+                --bt-stop-timeout=600 \
+                --timeout=600 \
                 --max-tries=5 \
                 --dir="tmp_downloads" \
                 "$URL"
