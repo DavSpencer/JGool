@@ -52,9 +52,9 @@ https://example.com/file.apk (My App)
 Multiple URLs — all formats are valid:
 
 ```
-https://example.com/App.apk (My App) https://example.com/Game.apk (My Game)
-https://example.com/App.apk (My App), https://example.com/Game.apk (My Game)
-https://example.com/App.apk https://example.com/Game.apk
+https://example.com/File.zip (My File) https://example.com/Game.apk (My Game)
+https://example.com/App.apk (My App), https://example.com/Movie.mp4 (My Movie)
+https://example.com/Photo.jpg https://example.com/Game.apk
 ```
 
 > The file extension is always preserved automatically. If subtitles are selected, the language tag is appended after your custom name — e.g. `My Video [EN].mp4`.
@@ -78,7 +78,7 @@ Applies to video sources (YouTube, Twitch, Vimeo, etc.).
 | `Audio MP3` | Audio only, extracted as MP3 |
 | `Best` | Highest available quality, MP4 container |
 
-> Quality selection only applies to yt-dlp sources. Direct links, Bunkr, and magnet downloads are not affected.
+> Quality selection only applies to yt-dlp sources (EX. YouTube, PH...). Direct links, Bunkr, and magnet downloads are not affected.
 
 ---
 
