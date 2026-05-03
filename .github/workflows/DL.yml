@@ -237,14 +237,14 @@ jobs:
           # Python extracts URL+name pairs — handles spaces in names correctly.
           echo "$RAW_URLS" > /tmp/gigili_urls.txt
           mapfile -t URL_PAIRS < <(python3 -c "
-import re
-raw = open('/tmp/gigili_urls.txt').read()
-pattern = r'((?:https?://|magnet:)[^\s,()]+)\s*(?:\(([^)]+)\))?'
-for m in re.finditer(pattern, raw):
-    url = m.group(1).strip()
-    name = m.group(2).strip() if m.group(2) else ''
-    print(url + '\t' + name)
-")
+          import re
+          raw = open('/tmp/gigili_urls.txt').read()
+          pattern = r'((?:https?://|magnet:)[^\s,()]+)\s*(?:\(([^)]+)\))?'
+          for m in re.finditer(pattern, raw):
+          url = m.group(1).strip()
+          name = m.group(2).strip() if m.group(2) else ''
+          print(url + '\t' + name)
+          ")
 
           for PAIR in "${URL_PAIRS[@]}"; do
             ACTUAL_URL=$(echo "$PAIR" | cut -f1)
