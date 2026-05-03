@@ -133,7 +133,8 @@ jobs:
               api_resp = fetch_api(url)
               dl_link = decrypt(api_resp) if api_resp else None
               if dl_link:
-                  filepath = os.path.join(outdir, urlparse(dl_link).path.rstrip("/").split("/")[-1])
+                  # Fixed: was urlparse(link) — corrected to urlparse(dl_link)
+                  filepath = os.path.join(outdir, urlparse(link).path.rstrip("/").split("/")[-1])
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
                       for c in resp.iter_content(8192): f.write(c) if c else None
@@ -185,147 +186,54 @@ jobs:
               ;;
           esac
 
-          # ── Static subtitle flags & tags ────────────────────────────────────
-          # NEEDS_DETECTION=true  → per-URL --list-subs probe required
-          # DETECT_FA / DETECT_EN → which languages to probe when detecting
-          BASE_SUB_F=""
-          STATIC_SUB_TAG=""
-          NEEDS_DETECTION=false
-          DETECT_FA=false
-          DETECT_EN=false
-
+          # ── Build subtitle flags ────────────────────────────────────────────
+          # --embed-subs works with MP4/MKV; WebM saves subs as separate .vtt files
+          SUB_F=""
           case "$SUBTITLES" in
             "English (Manual)")
-              BASE_SUB_F="--write-subs --embed-subs --sub-langs en --ignore-errors"
-              STATIC_SUB_TAG="[EN]"
+              SUB_F="--write-subs --embed-subs --sub-langs en --ignore-errors"
               ;;
             "English (Auto-Generated)")
-              BASE_SUB_F="--write-auto-subs --embed-subs --sub-langs en --ignore-errors"
-              STATIC_SUB_TAG="[EN-Auto]"
+              SUB_F="--write-auto-subs --embed-subs --sub-langs en --ignore-errors"
               ;;
             "English (Manual + Auto)")
-              # Tag reflects whichever source actually exists (manual preferred)
-              NEEDS_DETECTION=true; DETECT_FA=false; DETECT_EN=true
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs en --ignore-errors"
               ;;
             "Persian (Manual)")
-              BASE_SUB_F="--write-subs --embed-subs --sub-langs fa --ignore-errors"
-              STATIC_SUB_TAG="[FA]"
+              SUB_F="--write-subs --embed-subs --sub-langs fa --ignore-errors"
               ;;
             "Persian (Auto-Generated)")
-              BASE_SUB_F="--write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
-              STATIC_SUB_TAG="[FA-Auto]"
+              SUB_F="--write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
               ;;
             "Persian (Manual + Auto)")
-              # Tag reflects whichever source actually exists (manual preferred)
-              NEEDS_DETECTION=true; DETECT_FA=true; DETECT_EN=false
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
               ;;
             "Persian + English")
-              # Per-URL detection: manual preferred per lang, auto as fallback, skip if neither
-              NEEDS_DETECTION=true; DETECT_FA=true; DETECT_EN=true
+              SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa,en --ignore-errors"
               ;;
             *)
-              BASE_SUB_F=""
-              STATIC_SUB_TAG=""
+              SUB_F=""
               ;;
           esac
 
-          # ── Subtitle detection helper ───────────────────────────────────────
-          # Probes --list-subs for a URL and populates SUB_F_DETECTED + SUB_TAG_DETECTED.
-          # Priority: manual → auto-generated → skip (per language independently).
-          detect_subs_for_url() {
-            local url="$1" cookie_arg="$2" want_fa="$3" want_en="$4"
-            SUB_F_DETECTED=""
-            SUB_TAG_DETECTED=""
-
-            local list_out
-            list_out=$(yt-dlp --list-subs $cookie_arg "$url" 2>/dev/null)
-
-            local FA_MANUAL=false FA_AUTO=false EN_MANUAL=false EN_AUTO=false
-            local section=""
-
-            while IFS= read -r line; do
-              echo "$line" | grep -qi "Available subtitles"                && section="manual"
-              echo "$line" | grep -qi "automatic captions\|auto.*captions" && section="auto"
-
-              if [ "$section" = "manual" ]; then
-                echo "$line" | grep -qE "^fa[[:space:]]" && FA_MANUAL=true
-                echo "$line" | grep -qE "^en[[:space:]]" && EN_MANUAL=true
-              elif [ "$section" = "auto" ]; then
-                echo "$line" | grep -qE "^fa[[:space:]]" && FA_AUTO=true
-                echo "$line" | grep -qE "^en[[:space:]]" && EN_AUTO=true
-              fi
-            done <<< "$list_out"
-
-            local need_manual=false need_auto=false langs=""
-
-            if [ "$want_fa" = "true" ]; then
-              if $FA_MANUAL; then
-                need_manual=true; SUB_TAG_DETECTED+="[FA]"; langs+="fa,"
-              elif $FA_AUTO; then
-                need_auto=true;   SUB_TAG_DETECTED+="[FA-Auto]"; langs+="fa,"
-              else
-                echo "⚠️  No FA subtitles (manual or auto) found — skipping FA."
-              fi
-            fi
-
-            if [ "$want_en" = "true" ]; then
-              if $EN_MANUAL; then
-                need_manual=true; SUB_TAG_DETECTED+="[EN]"; langs+="en,"
-              elif $EN_AUTO; then
-                need_auto=true;   SUB_TAG_DETECTED+="[EN-Auto]"; langs+="en,"
-              else
-                echo "⚠️  No EN subtitles (manual or auto) found — skipping EN."
-              fi
-            fi
-
-            langs="${langs%,}"   # trim trailing comma
-
-            if [ -n "$langs" ]; then
-              $need_manual && SUB_F_DETECTED+=" --write-subs"
-              $need_auto   && SUB_F_DETECTED+=" --write-auto-subs"
-              SUB_F_DETECTED+=" --embed-subs --sub-langs $langs --ignore-errors"
-            fi
-          }
-
-          # ── Per-URL download loop ───────────────────────────────────────────
           for URL in $FORMATTED_URLS; do
-            [ -z "$URL" ] && continue
+            if [ -z "$URL" ]; then continue; fi
 
             echo "==========================================="
             echo "Processing URL: $URL"
             echo "==========================================="
 
-            # Resolve cookie arg for this URL (needed by detection + download)
-            COOKIE_ARG=""
-            if echo "$URL" | grep -qE "(youtube\.com|youtu\.be)"; then
-              [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
-            elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
-              [ -s ph_cookies.txt ] && COOKIE_ARG="--cookies ph_cookies.txt"
-            fi
-
-            # Determine subtitle flags + tag for this URL
-            if [ "$NEEDS_DETECTION" = "true" ] && \
-               echo "$URL" | grep -qE "(youtube\.com|youtu\.be|twitch\.tv|reddit\.com|vimeo|soundcloud|pornhub\.com|phub\.net)"; then
-              echo "🔍 Probing available subtitles..."
-              detect_subs_for_url "$URL" "$COOKIE_ARG" "$DETECT_FA" "$DETECT_EN"
-              SUB_F="$SUB_F_DETECTED"
-              SUB_TAG="$SUB_TAG_DETECTED"
-              [ -n "$SUB_TAG" ] && echo "✅ Subtitle tag resolved: $SUB_TAG"
-            else
-              SUB_F="$BASE_SUB_F"
-              SUB_TAG="$STATIC_SUB_TAG"
-            fi
-
-            # Snapshot existing files so we can identify newly added ones after download
-            mapfile -t BEFORE_FILES < <(ls tmp_downloads/ 2>/dev/null | sort)
-
-            # ── Dispatch to correct downloader ──────────────────────────────
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
+              # Bunkr is a direct file host — subtitles not applicable
               python3 bunkr.py "$URL" "tmp_downloads"
 
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
               echo "Downloading from PornHub with yt-dlp..."
+
+              COOKIE_ARG=""
+              [ -s ph_cookies.txt ] && COOKIE_ARG="--cookies ph_cookies.txt"
+
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
                 --remote-components ejs:github \
@@ -340,6 +248,9 @@ jobs:
 
             elif echo "$URL" | grep -qE "(youtube\.com|youtu\.be|twitch\.tv|reddit\.com|vimeo|soundcloud)"; then
               echo "Downloading with yt-dlp..."
+              COOKIE_ARG=""
+              [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
+
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
                 --remote-components ejs:github \
@@ -351,32 +262,9 @@ jobs:
 
             else
               echo "Downloading direct file with aria2..."
+              # aria2 is for direct file downloads — subtitles not applicable
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
             fi
-
-            # ── Rename newly downloaded video/audio files with SUB_TAG ───────
-            if [ -n "$SUB_TAG" ]; then
-              mapfile -t AFTER_FILES < <(ls tmp_downloads/ 2>/dev/null | sort)
-              mapfile -t NEW_FILES  < <(comm -13 <(printf '%s\n' "${BEFORE_FILES[@]}") \
-                                                  <(printf '%s\n' "${AFTER_FILES[@]}"))
-
-              for fname in "${NEW_FILES[@]}"; do
-                fpath="tmp_downloads/$fname"
-                [ -f "$fpath" ] || continue
-                ext="${fname##*.}"
-                # Skip subtitle sidecar files — only rename the actual media
-                case "$ext" in
-                  vtt|srt|ass|ssa|sub|ttml|srv1|srv2|srv3|json3)
-                    rm -f "$fpath"   # clean up sidecar left by --write-subs
-                    continue
-                    ;;
-                esac
-                base="${fname%.*}"
-                mv "$fpath" "tmp_downloads/${base} ${SUB_TAG}.${ext}"
-                echo "📝 Renamed → ${base} ${SUB_TAG}.${ext}"
-              done
-            fi
-
           done
 
       - name: Zip & Split
