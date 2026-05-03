@@ -118,9 +118,9 @@ Controls how files are packaged before being pushed to the repository.
 
 | Option | Behavior |
 |---|---|
-| `Auto (ZIP only if >95MB)` | Files under 95MB are saved raw. Files over 95MB are zipped and split into 95MB parts. Setting a password always triggers a zip. |
-| `Individual ZIP (one zip per file)` | Every file gets its own `.zip`, split if over 95MB. |
-| `Bundle ZIP (all files in one zip)` | All downloaded files are packed into a single `.zip`, split into parts if the total size exceeds 95MB. |
+| `Auto (ZIP only if >95MB)` | Files under 95MB are saved raw. Files over 95MB are zipped automatically and split into 95MB parts. Setting a password always triggers a zip. |
+| `Individual ZIP (one zip per file)` | If you add multiple links, Every file gets its own `.zip`, split if over 95MB. |
+| `Bundle ZIP (all files in one zip)` | If you add multiple links, All downloaded files are packed into a single `.zip`, split into parts if the total size exceeds 95MB. |
 
 **Bundle ZIP naming** — the zip is named after the first downloaded file plus a timestamp:
 
