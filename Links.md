@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-03 16:11 IR
+- 🎬 [PS5 Jailbreak News： New PS5 12.70 Jailbreak Coming, Linux Released, Y2JB Payload Manager & More! [FA-Auto][EN-Auto].webm](https://github.com/DavSpencer/JGool/raw/main/dl/PS5%20Jailbreak%20News%EF%BC%9A%20New%20PS5%2012.70%20Jailbreak%20Coming%2C%20Linux%20Released%2C%20Y2JB%20Payload%20Manager%20%26%20More%21%20%5BFA-Auto%5D%5BEN-Auto%5D.webm) `42.1MB`
+
+---
+
+
 ### 📅 2026-05-03 15:54 IR
 - 📥 [PS5 Jailbreak News： New PS5 12.70 Jailbreak Coming, Linux Released, Y2JB Payload Manager & More!.en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/PS5%20Jailbreak%20News%EF%BC%9A%20New%20PS5%2012.70%20Jailbreak%20Coming%2C%20Linux%20Released%2C%20Y2JB%20Payload%20Manager%20%26%20More%21.en.vtt) `91KB`
 
