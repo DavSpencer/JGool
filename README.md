@@ -8,15 +8,11 @@ Supports YouTube, Twitch, Reddit, Vimeo, SoundCloud, PornHub, Bunkr, direct file
 
 ## ⚙️ Setup
 
-### 1. Add the workflow file
-
-Place `gigili.yml` inside `.github/workflows/` in your repository.
-
-### 2. Set repository permissions
+### 1. Set repository permissions
 
 Go to **Settings → Actions → General → Workflow permissions** and set it to **Read and write permissions**.
 
-### 3. (Optional) Add cookies for restricted content
+### 2. (Optional) Add cookies for restricted content
 
 If you need to download age-restricted or login-required content, add your cookies as repository secrets:
 
