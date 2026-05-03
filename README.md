@@ -148,7 +148,7 @@ Set a password to protect the ZIP archive. Leave empty for no encryption.
 | PornHub | yt-dlp (+ optional cookies) |
 | Bunkr (`bunkr.si`, `bunkr.cr`, `bunkr.rip`, etc.) | Custom Python script |
 | Direct HTTP/HTTPS links | aria2c |
-| Magnet / Torrent (`magnet:?xt=...`) | aria2c ⚠️ |
+| Magnet / Torrent (`magnet:?xt=...`) | aria2c ⚠️ | 
 
 ---
 
