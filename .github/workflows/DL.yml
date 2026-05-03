@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'URLs — separated by comma or space. To rename: URL (Custom Name)'
+        description: 'Target URLs (Separate with space, comma, or new line)'
         required: true
         type: string
       quality:
@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       subtitles:
-        description: 'Subtitles — embed into video (MP4/MKV only; WebM saves as .vtt)'
+        description: 'Subtitles — embed into video (MP4 only)'
         required: false
         type: choice
         default: 'None'
@@ -36,15 +36,11 @@ on:
           - 'Persian (Auto-Generated)'
           - 'Persian (Manual + Auto)'
           - 'Persian + English'
-      zip_mode:
-        description: 'ZIP Mode'
+      force_zip:
+        description: 'Force ZIP (even if under 95MB)'
         required: false
-        type: choice
-        default: 'Auto (ZIP only if >95MB)'
-        options:
-          - 'Auto (ZIP only if >95MB)'
-          - 'Individual ZIP (one zip per file)'
-          - 'Bundle ZIP (all files in one zip)'
+        type: boolean
+        default: false
       password:
         description: 'ZIP Password (Optional)'
         required: false
@@ -137,7 +133,8 @@ jobs:
               api_resp = fetch_api(url)
               dl_link = decrypt(api_resp) if api_resp else None
               if dl_link:
-                  filepath = os.path.join(outdir, urlparse(dl_link).path.rstrip("/").split("/")[-1])
+                  # Fixed: was urlparse(link) — corrected to urlparse(dl_link)
+                  filepath = os.path.join(outdir, urlparse(link).path.rstrip("/").split("/")[-1])
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
                       for c in resp.iter_content(8192): f.write(c) if c else None
@@ -149,6 +146,8 @@ jobs:
           RAW_URLS="${{ github.event.inputs.url }}"
           QUALITY="${{ github.event.inputs.quality }}"
           SUBTITLES="${{ github.event.inputs.subtitles }}"
+
+          FORMATTED_URLS=$(echo "$RAW_URLS" | tr ',' ' ' | tr '\n' ' ')
 
           rm -rf tmp_downloads
           mkdir -p tmp_downloads dl
@@ -183,87 +182,50 @@ jobs:
               YTDLP_F="-x --audio-format mp3"
               ;;
             *)
-              # Best — let yt-dlp decide
               YTDLP_F="--merge-output-format mp4"
               ;;
           esac
 
-          # ── Build subtitle flags + filename suffix ──────────────────────────
-          # --embed-subs works with MP4/MKV only; WebM saves subs as .vtt files
-          # --ignore-errors skips unavailable/rate-limited languages gracefully
-          # SUB_SUFFIX is appended to the filename: e.g. "Video Title [EN-FA].mp4"
+          # ── Build subtitle flags ────────────────────────────────────────────
+          # --embed-subs works with MP4/MKV; WebM saves subs as separate .vtt files
           SUB_F=""
-          SUB_SUFFIX=""
           case "$SUBTITLES" in
             "English (Manual)")
               SUB_F="--write-subs --embed-subs --sub-langs en --ignore-errors"
-              SUB_SUFFIX=" [EN]"
               ;;
             "English (Auto-Generated)")
               SUB_F="--write-auto-subs --embed-subs --sub-langs en --ignore-errors"
-              SUB_SUFFIX=" [EN]"
               ;;
             "English (Manual + Auto)")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs en --ignore-errors"
-              SUB_SUFFIX=" [EN]"
               ;;
             "Persian (Manual)")
               SUB_F="--write-subs --embed-subs --sub-langs fa --ignore-errors"
-              SUB_SUFFIX=" [FA]"
               ;;
             "Persian (Auto-Generated)")
               SUB_F="--write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
-              SUB_SUFFIX=" [FA]"
               ;;
             "Persian (Manual + Auto)")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa --ignore-errors"
-              SUB_SUFFIX=" [FA]"
               ;;
             "Persian + English")
               SUB_F="--write-subs --write-auto-subs --embed-subs --sub-langs fa,en --ignore-errors"
-              SUB_SUFFIX=" [EN-FA]"
               ;;
             *)
               SUB_F=""
-              SUB_SUFFIX=""
               ;;
           esac
 
-          # ── Parse URLs — supports "URL (Custom Name)" syntax ─────────────
-          # Separated by comma or space. Examples:
-          #   https://a.com/f.apk (My App) https://b.com/g.apk (Other)
-          #   https://a.com/f.apk (My App), https://b.com/g.apk
-          #   https://a.com/f.apk
-          # Python extracts URL+name pairs — handles spaces in names correctly.
-          echo "$RAW_URLS" > /tmp/gigili_urls.txt
-          mapfile -t URL_PAIRS < <(python3 -c "
-import re
-raw = open('/tmp/gigili_urls.txt').read()
-pattern = r'((?:https?://|magnet:)[^\s,()]+)\s*(?:\(([^)]+)\))?'
-for m in re.finditer(pattern, raw):
-    url = m.group(1).strip()
-    name = m.group(2).strip() if m.group(2) else ''
-    print(url + '\t' + name)
-")
-
-          for PAIR in "${URL_PAIRS[@]}"; do
-            ACTUAL_URL=$(echo "$PAIR" | cut -f1)
-            CUSTOM_NAME=$(echo "$PAIR" | cut -f2)
-
-            [ -z "$ACTUAL_URL" ] && continue
-            URL="$ACTUAL_URL"
+          for URL in $FORMATTED_URLS; do
+            if [ -z "$URL" ]; then continue; fi
 
             echo "==========================================="
             echo "Processing URL: $URL"
-            [ -n "$CUSTOM_NAME" ] && echo "Custom name : ${CUSTOM_NAME}"
             echo "==========================================="
-
-            # Snapshot tmp_downloads BEFORE download so we can detect new files
-            # and rename them when a custom name is provided (aria2/bunkr/magnet)
-            ls tmp_downloads/ 2>/dev/null | sort > /tmp/before_dl.txt || touch /tmp/before_dl.txt
 
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
+              # Bunkr is a direct file host — subtitles not applicable
               python3 bunkr.py "$URL" "tmp_downloads"
 
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
@@ -271,12 +233,6 @@ for m in re.finditer(pattern, raw):
 
               COOKIE_ARG=""
               [ -s ph_cookies.txt ] && COOKIE_ARG="--cookies ph_cookies.txt"
-
-              if [ -n "$CUSTOM_NAME" ]; then
-                YTDLP_OUT="tmp_downloads/${CUSTOM_NAME}${SUB_SUFFIX}.%(ext)s"
-              else
-                YTDLP_OUT="tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s"
-              fi
 
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
@@ -287,7 +243,7 @@ for m in re.finditer(pattern, raw):
                 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
                 --add-header "Referer:https://www.pornhub.com/" \
                 --add-header "Accept-Language:en-US,en;q=0.9" \
-                -o "$YTDLP_OUT" \
+                -o "tmp_downloads/%(title)s.%(ext)s" \
                 "$URL"
 
             elif echo "$URL" | grep -qE "(youtube\.com|youtu\.be|twitch\.tv|reddit\.com|vimeo|soundcloud)"; then
@@ -295,62 +251,19 @@ for m in re.finditer(pattern, raw):
               COOKIE_ARG=""
               [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
 
-              if [ -n "$CUSTOM_NAME" ]; then
-                YTDLP_OUT="tmp_downloads/${CUSTOM_NAME}${SUB_SUFFIX}.%(ext)s"
-              else
-                YTDLP_OUT="tmp_downloads/%(title)s${SUB_SUFFIX}.%(ext)s"
-              fi
-
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
                 --remote-components ejs:github \
                 $COOKIE_ARG \
                 $YTDLP_F \
                 $SUB_F \
-                -o "$YTDLP_OUT" \
-                "$URL"
-
-            elif echo "$URL" | grep -qi "^magnet:"; then
-              # ⚠️  TORRENT / MAGNET WARNING:
-              # GitHub Actions jobs have a 6-hour hard limit. Large or slow torrents
-              # WILL get killed mid-download with no output saved. This works reliably
-              # only for small (<1GB) and well-seeded torrents. There is also no
-              # guarantee the runner IP is not blocked by some trackers.
-              echo "Magnet/Torrent detected — downloading with aria2c..."
-              echo "⚠️  WARNING: GitHub Actions has a 6h job limit. Large torrents may not finish."
-              aria2c \
-                --enable-dht=true \
-                --enable-peer-exchange=true \
-                --bt-save-metadata=true \
-                --seed-time=0 \
-                --max-connection-per-server=4 \
-                --split=4 \
-                --bt-stop-timeout=300 \
-                --timeout=300 \
-                --max-tries=5 \
-                --dir="tmp_downloads" \
+                -o "tmp_downloads/%(title)s.%(ext)s" \
                 "$URL"
 
             else
               echo "Downloading direct file with aria2..."
+              # aria2 is for direct file downloads — subtitles not applicable
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
-            fi
-
-            # ── Post-download rename (bunkr / aria2 / magnet only) ───────────
-            # yt-dlp already uses CUSTOM_NAME in its -o template above.
-            # For other sources: diff the directory snapshot to find new files,
-            # then rename each one to CUSTOM_NAME (+ SUB_SUFFIX) keeping extension.
-            if [ -n "$CUSTOM_NAME" ]; then
-              ls tmp_downloads/ 2>/dev/null | sort > /tmp/after_dl.txt || touch /tmp/after_dl.txt
-              mapfile -t NEW_FILES < <(comm -13 /tmp/before_dl.txt /tmp/after_dl.txt)
-              for NEW_FILE in "${NEW_FILES[@]}"; do
-                EXT="${NEW_FILE##*.}"
-                NEW_NAME="${CUSTOM_NAME}${SUB_SUFFIX}.${EXT}"
-                if [ "$NEW_FILE" != "$NEW_NAME" ]; then
-                  echo "Renaming: $NEW_FILE → $NEW_NAME"
-                  mv "tmp_downloads/${NEW_FILE}" "tmp_downloads/${NEW_NAME}"
-                fi
-              done
             fi
           done
 
@@ -358,103 +271,39 @@ for m in re.finditer(pattern, raw):
         shell: bash
         run: |
           HAS_PASS="${{ github.event.inputs.password }}"
-          ZIP_MODE="${{ github.event.inputs.zip_mode }}"
+          FORCE_ZIP="${{ github.event.inputs.force_zip }}"
           LIMIT=$((95 * 1024 * 1024))
 
-          # Remove junk files from tmp_downloads before any zipping:
-          # - .vtt  — subtitle sidecars written by yt-dlp (already embedded in video)
-          # - .aria2 — aria2c control/resume files, not part of the actual download
-          rm -f tmp_downloads/*.vtt tmp_downloads/*.aria2
+          for FILE in tmp_downloads/*; do
+            [ -f "$FILE" ] || continue
+            SIZE=$(stat -c%s "$FILE")
+            BASENAME=$(basename "$FILE")
 
-          PASS_ARG=""
-          [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
+            rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}.z"[0-9]*
 
-          # ── Helper: list .zip then numbered split parts into new_files.txt ──
-          # Two separate loops — z[0-9]* never matches .zip, so no duplicates
-          list_zip_parts() {
-            local BASE="$1"
-            local STEM="${BASE%.zip}"
-            [ -f "${BASE}" ] && basename "${BASE}" >> new_files.txt
-            for PART in "${STEM}".z[0-9]*; do
-              [ -f "$PART" ] && basename "$PART" >> new_files.txt
-            done
-          }
+            if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ] || [ "$FORCE_ZIP" = "true" ]; then
+              echo "Zipping/Splitting: $BASENAME"
 
-          # ── Smart bundle name: first-file-stem + "+Nx" if multiple ──────────
-          # Sanitize: strip non-ASCII, replace spaces with underscores, trim length.
-          # Prevents zip failing on Persian/Arabic/CJK filenames with spaces.
-          make_bundle_name() {
-            local COUNT
-            COUNT=$(find tmp_downloads -maxdepth 1 -type f | wc -l)
-            local FIRST
-            FIRST=$(find tmp_downloads -maxdepth 1 -type f | sort | head -1)
-            local STEM
-            STEM=$(basename "$FIRST")
-            STEM="${STEM%.*}"
-            # Strip non-ASCII, spaces → underscores, remove remaining unsafe chars
-            STEM=$(echo "$STEM" | sed 's/[^\x00-\x7F]//g' | tr ' ' '_' | tr -cd '[:alnum:]_.-')
-            STEM="${STEM:0:40}"
-            # Fallback: fully non-ASCII title (e.g. all Persian) becomes "bundle"
-            [ -z "$STEM" ] && STEM="bundle"
-            local TIMESTAMP
-            TIMESTAMP=$(TZ='Asia/Tehran' date +'%Y%m%d_%H%M')
-            if [ "$COUNT" -gt 1 ]; then
-              echo "${STEM}+$((COUNT-1))more_${TIMESTAMP}.zip"
-            else
-              echo "${STEM}_${TIMESTAMP}.zip"
-            fi
-          }
+              PASS_ARG=""
+              [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
 
-          # ════════════════════════════════════════════════════════════════════
-          # BUNDLE ZIP — all files packed into one archive, split if >95MB
-          # Uses mapfile+find instead of glob so filenames with spaces/special
-          # characters (common in direct APK/file URLs) are handled safely.
-          # ════════════════════════════════════════════════════════════════════
-          if [ "$ZIP_MODE" = "Bundle ZIP (all files in one zip)" ]; then
-            mapfile -t BUNDLE_FILES < <(find tmp_downloads -maxdepth 1 -type f | sort)
-            if [ ${#BUNDLE_FILES[@]} -eq 0 ]; then
-              echo "No files found to bundle — skipping."
-            else
-              BUNDLE_NAME=$(make_bundle_name)
-              echo "Bundling ${#BUNDLE_FILES[@]} file(s) into: $BUNDLE_NAME"
-              zip $PASS_ARG -s 95m "dl/${BUNDLE_NAME}" -j "${BUNDLE_FILES[@]}"
-              list_zip_parts "dl/${BUNDLE_NAME}"
-            fi
-
-          # ════════════════════════════════════════════════════════════════════
-          # INDIVIDUAL ZIP — one zip per file (always zipped), split if >95MB
-          # ════════════════════════════════════════════════════════════════════
-          elif [ "$ZIP_MODE" = "Individual ZIP (one zip per file)" ]; then
-            while IFS= read -r -d '' FILE; do
-              BASENAME=$(basename "$FILE")
-              rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}".z[0-9]*
-              echo "Zipping: $BASENAME"
               zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
-              list_zip_parts "dl/${BASENAME}.zip"
-            done < <(find tmp_downloads -maxdepth 1 -type f -print0 | sort -z)
 
-          # ════════════════════════════════════════════════════════════════════
-          # AUTO — zip/split only if file exceeds 95MB or password is set
-          # ════════════════════════════════════════════════════════════════════
-          else
-            for FILE in tmp_downloads/*; do
-              [ -f "$FILE" ] || continue
-              SIZE=$(stat -c%s "$FILE")
-              BASENAME=$(basename "$FILE")
-              rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}".z[0-9]*
+              # .zip first, then numbered split parts (.z01, .z02, ...)
+              # z[0-9]* intentionally excludes .zip to prevent duplicates
+              for ZPART in "dl/${BASENAME}.zip"; do
+                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
+              done
+              for ZPART in "dl/${BASENAME}".z[0-9]*; do
+                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
+              done
 
-              if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ]; then
-                echo "Zipping/Splitting: $BASENAME"
-                zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
-                list_zip_parts "dl/${BASENAME}.zip"
-              else
-                echo "Under 95MB, no password — copying raw: $BASENAME"
-                cp -f "$FILE" "dl/$BASENAME"
-                echo "$BASENAME" >> new_files.txt
-              fi
-            done
-          fi
-
+            else
+              echo "File is under 95MB and no ZIP requested. Copying raw file..."
+              cp -f "$FILE" "dl/$BASENAME"
+              echo "$BASENAME" >> new_files.txt
+            fi
+          done
           rm -rf tmp_downloads
 
       - name: Update Links.md
@@ -513,7 +362,4 @@ for m in re.finditer(pattern, raw):
           git config user.email "224584266+NetSentinel-Bot@users.noreply.github.com"
           git add dl/ Links.md
           git commit -m "Add downloaded files via Panel [skip ci]" || echo "Nothing to commit"
-          # Pull with rebase before pushing to avoid rejection when another run
-          # committed to the same branch between our checkout and this push.
-          git pull --rebase origin "$BRANCH"
           git push origin HEAD:$BRANCH
