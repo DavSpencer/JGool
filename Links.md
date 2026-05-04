@@ -2,6 +2,14 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-04 14:37 IR
+- 📥 [Photoshop ： How to Change Color of Object (Fast Tutorial).en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/Photoshop%20%EF%BC%9A%20How%20to%20Change%20Color%20of%20Object%20%28Fast%20Tutorial%29.en.vtt) `18KB`
+
+- 🎬 [Photoshop ： How to Change Color of Object (Fast Tutorial).webm](https://github.com/DavSpencer/JGool/raw/main/dl/Photoshop%20%EF%BC%9A%20How%20to%20Change%20Color%20of%20Object%20%28Fast%20Tutorial%29.webm) `7.6MB`
+
+---
+
+
 ### 📅 2026-05-04 14:24 IR
 - 📥 [How to Convert or Save Files as SVG Format in Photoshop ｜ SVG Support in Photoshop..en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/How%20to%20Convert%20or%20Save%20Files%20as%20SVG%20Format%20in%20Photoshop%20%EF%BD%9C%20SVG%20Support%20in%20Photoshop..en.vtt) `2KB`
 
