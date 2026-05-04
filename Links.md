@@ -2,6 +2,14 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-04 14:15 IR
+- 📥 [How To Convert a PNG To Vector in Photoshop.en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/How%20To%20Convert%20a%20PNG%20To%20Vector%20in%20Photoshop.en.vtt) `14KB`
+
+- 🎬 [How To Convert a PNG To Vector in Photoshop.webm](https://github.com/DavSpencer/JGool/raw/main/dl/How%20To%20Convert%20a%20PNG%20To%20Vector%20in%20Photoshop.webm) `2.6MB`
+
+---
+
+
 ### 📅 2026-05-04 12:37 IR
 - 📱 [Exclave-0.17.38-arm64-v8a.apk](https://github.com/DavSpencer/JGool/raw/main/dl/Exclave-0.17.38-arm64-v8a.apk) `22.2MB`
 
