@@ -2,6 +2,14 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-04 14:24 IR
+- 📥 [How to Convert or Save Files as SVG Format in Photoshop ｜ SVG Support in Photoshop..en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/How%20to%20Convert%20or%20Save%20Files%20as%20SVG%20Format%20in%20Photoshop%20%EF%BD%9C%20SVG%20Support%20in%20Photoshop..en.vtt) `2KB`
+
+- 🎬 [How to Convert or Save Files as SVG Format in Photoshop ｜ SVG Support in Photoshop..mp4](https://github.com/DavSpencer/JGool/raw/main/dl/How%20to%20Convert%20or%20Save%20Files%20as%20SVG%20Format%20in%20Photoshop%20%EF%BD%9C%20SVG%20Support%20in%20Photoshop..mp4) `7.6MB`
+
+---
+
+
 ### 📅 2026-05-04 14:17 IR
 - 🎬 [Convert PNG & JPEG To Vector with Adobe Illustrator #illustrator.mp4](https://github.com/DavSpencer/JGool/raw/main/dl/Convert%20PNG%20%26%20JPEG%20To%20Vector%20with%20Adobe%20Illustrator%20%23illustrator.mp4) `1.2MB`
 
