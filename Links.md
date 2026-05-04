@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-04 14:17 IR
+- 🎬 [Convert PNG & JPEG To Vector with Adobe Illustrator #illustrator.mp4](https://github.com/DavSpencer/JGool/raw/main/dl/Convert%20PNG%20%26%20JPEG%20To%20Vector%20with%20Adobe%20Illustrator%20%23illustrator.mp4) `1.2MB`
+
+---
+
+
 ### 📅 2026-05-04 14:15 IR
 - 📥 [How To Convert a PNG To Vector in Photoshop.en.vtt](https://github.com/DavSpencer/JGool/raw/main/dl/How%20To%20Convert%20a%20PNG%20To%20Vector%20in%20Photoshop.en.vtt) `14KB`
 
