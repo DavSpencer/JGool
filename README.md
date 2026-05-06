@@ -1,3 +1,5 @@
+# [JGool - جیگول](https://github.com/DavSpencer/JGool/)
+
 # 📥 JGool — DL
 
 A GitHub Actions workflow that downloads files from URLs directly into your repository and generates ready-to-use download links in `Links.md`.
