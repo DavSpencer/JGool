@@ -37,10 +37,14 @@ on:
           - 'Persian (Manual + Auto)'
           - 'Persian + English'
       force_zip:
-        description: 'Force ZIP (even if under 95MB)'
-        required: false
-        type: boolean
-        default: false
+        description: 'ZIP Mode'
+        required: true
+        type: choice
+        default: 'Auto (ZIP only if >95MB)'
+        options:
+          - 'Auto (ZIP only if >95MB)'
+          - 'Individual ZIP (one zip per file)'
+          - 'Bundle ZIP (all files in one zip)'
       password:
         description: 'ZIP Password (Optional)'
         required: false
@@ -92,7 +96,7 @@ jobs:
             touch ph_cookies.txt
           fi
 
-      - name: Setup Bunkr script
+      - name: Setup Bunkr Script
         run: |
           cat << 'EOF' > bunkr.py
           import os, sys, json, time, base64, requests
@@ -128,13 +132,19 @@ jobs:
               except: return None
 
           if __name__ == "__main__":
-              url = sys.argv[1]
-              outdir = sys.argv[2]
+              url      = sys.argv[1]
+              outdir   = sys.argv[2]
+              custom_name = sys.argv[3] if len(sys.argv) > 3 else ""
               api_resp = fetch_api(url)
-              dl_link = decrypt(api_resp) if api_resp else None
+              dl_link  = decrypt(api_resp) if api_resp else None
               if dl_link:
-                  # Fixed: was urlparse(link) — corrected to urlparse(dl_link)
-                  filepath = os.path.join(outdir, urlparse(link).path.rstrip("/").split("/")[-1])
+                  orig_name = urlparse(dl_link).path.rstrip("/").split("/")[-1]
+                  if custom_name:
+                      ext      = os.path.splitext(orig_name)[1]
+                      out_name = custom_name + ext
+                  else:
+                      out_name = orig_name
+                  filepath = os.path.join(outdir, out_name)
                   resp = requests.get(dl_link, headers=BUNKRR_DOWNLOAD_HEADERS, stream=True)
                   with open(filepath, "wb") as f:
                       for c in resp.iter_content(8192): f.write(c) if c else None
@@ -146,11 +156,6 @@ jobs:
           RAW_URLS="${{ github.event.inputs.url }}"
           QUALITY="${{ github.event.inputs.quality }}"
           SUBTITLES="${{ github.event.inputs.subtitles }}"
-
-          FORMATTED_URLS=$(echo "$RAW_URLS" | tr ',' ' ' | tr '\n' ' ')
-
-          rm -rf tmp_downloads
-          mkdir -p tmp_downloads dl
 
           # ── Build yt-dlp format string ──────────────────────────────────────
           case "$QUALITY" in
@@ -216,23 +221,50 @@ jobs:
               ;;
           esac
 
-          for URL in $FORMATTED_URLS; do
-            if [ -z "$URL" ]; then continue; fi
+          # ── Parse URLs with optional custom names ───────────────────────────
+          # Handles all formats:
+          #   URL (Name)
+          #   URL1 (Name1) URL2 (Name2)
+          #   URL1 (Name1), URL2 (Name2)
+          #   URL1 URL2  (no names)
+          cat << 'PYEOF' > /tmp/parse_urls.py
+          import re, sys
+          raw = sys.argv[1]
+          for m in re.finditer(r'((?:https?://|magnet:\?xt=)[^\s,()]+)\s*(?:\(([^)]*)\))?', raw):
+              print(m.group(1) + '\t' + (m.group(2) or ''))
+          PYEOF
+          python3 /tmp/parse_urls.py "$RAW_URLS" > url_list.tsv
+
+          rm -rf tmp_downloads
+          mkdir -p tmp_downloads dl
+
+          while IFS=$'\t' read -r URL CUSTOM_NAME; do
+            [ -z "$URL" ] && continue
 
             echo "==========================================="
             echo "Processing URL: $URL"
+            [ -n "$CUSTOM_NAME" ] && echo "→ Custom name: $CUSTOM_NAME"
             echo "==========================================="
+
+            # Snapshot existing files before this download (used for aria2c rename)
+            BEFORE=$(ls tmp_downloads/ 2>/dev/null | sort)
 
             if echo "$URL" | grep -qE "(bunkr\.si|bunkr\.fi|bunkr\.ru|bunkr\.cr|bunkr\.rip|bunkrr\.su)"; then
               echo "Downloading from Bunkr..."
-              # Bunkr is a direct file host — subtitles not applicable
-              python3 bunkr.py "$URL" "tmp_downloads"
+              # Custom name is passed directly; bunkr.py preserves the original extension
+              python3 bunkr.py "$URL" "tmp_downloads" "$CUSTOM_NAME"
 
             elif echo "$URL" | grep -qE "(pornhub\.com|phub\.net)"; then
               echo "Downloading from PornHub with yt-dlp..."
 
               COOKIE_ARG=""
               [ -s ph_cookies.txt ] && COOKIE_ARG="--cookies ph_cookies.txt"
+
+              if [ -n "$CUSTOM_NAME" ]; then
+                OUT_TMPL="tmp_downloads/${CUSTOM_NAME}.%(ext)s"
+              else
+                OUT_TMPL="tmp_downloads/%(title)s.%(ext)s"
+              fi
 
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
@@ -243,13 +275,20 @@ jobs:
                 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
                 --add-header "Referer:https://www.pornhub.com/" \
                 --add-header "Accept-Language:en-US,en;q=0.9" \
-                -o "tmp_downloads/%(title)s.%(ext)s" \
+                -o "$OUT_TMPL" \
                 "$URL"
 
             elif echo "$URL" | grep -qE "(youtube\.com|youtu\.be|twitch\.tv|reddit\.com|vimeo|soundcloud)"; then
               echo "Downloading with yt-dlp..."
+
               COOKIE_ARG=""
               [ -s youtube_cookies.txt ] && COOKIE_ARG="--cookies youtube_cookies.txt"
+
+              if [ -n "$CUSTOM_NAME" ]; then
+                OUT_TMPL="tmp_downloads/${CUSTOM_NAME}.%(ext)s"
+              else
+                OUT_TMPL="tmp_downloads/%(title)s.%(ext)s"
+              fi
 
               yt-dlp \
                 --js-runtimes bun:$HOME/.bun/bin/bun \
@@ -257,53 +296,138 @@ jobs:
                 $COOKIE_ARG \
                 $YTDLP_F \
                 $SUB_F \
-                -o "tmp_downloads/%(title)s.%(ext)s" \
+                -o "$OUT_TMPL" \
                 "$URL"
 
             else
               echo "Downloading direct file with aria2..."
-              # aria2 is for direct file downloads — subtitles not applicable
+              # aria2c is for direct file downloads — subtitles not applicable
               aria2c --split=2 --max-connection-per-server=2 --dir="tmp_downloads" "$URL"
+
+              # Rename to custom name if specified, preserving the original extension
+              if [ -n "$CUSTOM_NAME" ]; then
+                AFTER=$(ls tmp_downloads/ 2>/dev/null | sort)
+                while IFS= read -r FNAME; do
+                  [ -z "$FNAME" ] && continue
+                  [ "${FNAME##*.}" = "vtt" ] && continue
+                  EXT="${FNAME##*.}"
+                  mv "tmp_downloads/$FNAME" "tmp_downloads/${CUSTOM_NAME}.${EXT}"
+                done < <(comm -13 <(echo "$BEFORE") <(echo "$AFTER"))
+              fi
             fi
-          done
+
+          done < url_list.tsv
+          rm -f url_list.tsv
+
+          # ── Append subtitle language tag to every downloaded filename ────────
+          # Applied to all sources: e.g. "My Video [EN].mp4", "My App [FA].apk"
+          # .vtt sidecar files are excluded here and deleted in the next block.
+          SUB_TAG=""
+          case "$SUBTITLES" in
+            "English (Manual)"|"English (Auto-Generated)"|"English (Manual + Auto)") SUB_TAG="EN"    ;;
+            "Persian (Manual)"|"Persian (Auto-Generated)"|"Persian (Manual + Auto)")  SUB_TAG="FA"    ;;
+            "Persian + English")                                                       SUB_TAG="EN-FA" ;;
+          esac
+
+          if [ -n "$SUB_TAG" ]; then
+            find tmp_downloads -maxdepth 1 -type f ! -name "*.vtt" | while read -r FPATH; do
+              FNAME=$(basename "$FPATH")
+              EXT="${FNAME##*.}"
+              NAME="${FNAME%.*}"
+              mv "$FPATH" "tmp_downloads/${NAME} [${SUB_TAG}].${EXT}"
+            done
+          fi
+
+          # ── Delete .vtt sidecar files (WebM subtitle workaround) ─────────────
+          # These are never pushed to the repository.
+          find tmp_downloads -maxdepth 1 -name "*.vtt" -delete
 
       - name: Zip & Split
         shell: bash
         run: |
           HAS_PASS="${{ github.event.inputs.password }}"
-          FORCE_ZIP="${{ github.event.inputs.force_zip }}"
+          ZIP_MODE="${{ github.event.inputs.force_zip }}"
           LIMIT=$((95 * 1024 * 1024))
 
-          for FILE in tmp_downloads/*; do
-            [ -f "$FILE" ] || continue
-            SIZE=$(stat -c%s "$FILE")
-            BASENAME=$(basename "$FILE")
+          PASS_ARG=""
+          [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
 
-            rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}.z"[0-9]*
+          if [ "$ZIP_MODE" = "Bundle ZIP (all files in one zip)" ]; then
+            # ── Pack every downloaded file into one ZIP ───────────────────────
+            # Named after the first file + timestamp; split into 95MB parts if needed.
+            FILES=()
+            while IFS= read -r -d '' f; do
+              FILES+=("$f")
+            done < <(find tmp_downloads -maxdepth 1 -type f -print0 | sort -z)
 
-            if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ] || [ "$FORCE_ZIP" = "true" ]; then
-              echo "Zipping/Splitting: $BASENAME"
+            if [ ${#FILES[@]} -gt 0 ]; then
+              FIRST=$(basename "${FILES[0]}")
+              FIRST_NAME="${FIRST%.*}"
+              COUNT=${#FILES[@]}
+              TIMESTAMP=$(TZ='Asia/Tehran' date +'%Y%m%d_%H%M')
 
-              PASS_ARG=""
-              [ -n "$HAS_PASS" ] && PASS_ARG="-P $HAS_PASS"
+              if [ "$COUNT" -eq 1 ]; then
+                ZIP_NAME="${FIRST_NAME}_${TIMESTAMP}.zip"
+              else
+                ZIP_NAME="${FIRST_NAME}+$((COUNT - 1))more_${TIMESTAMP}.zip"
+              fi
+
+              zip $PASS_ARG -s 95m "dl/$ZIP_NAME" -j tmp_downloads/*
+
+              # Register .zip part then any numbered split parts (.z01, .z02, …)
+              ZIP_BASE="${ZIP_NAME%.zip}"
+              [ -f "dl/$ZIP_NAME" ] && echo "$ZIP_NAME" >> new_files.txt
+              for ZPART in "dl/${ZIP_BASE}".z[0-9]*; do
+                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
+              done
+            fi
+
+          elif [ "$ZIP_MODE" = "Individual ZIP (one zip per file)" ]; then
+            # ── Each file gets its own ZIP, split into 95MB parts if needed ───
+            for FILE in tmp_downloads/*; do
+              [ -f "$FILE" ] || continue
+              BASENAME=$(basename "$FILE")
+
+              rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}".z[0-9]*
 
               zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
 
-              # .zip first, then numbered split parts (.z01, .z02, ...)
+              # .zip first, then numbered split parts (.z01, .z02, …)
               # z[0-9]* intentionally excludes .zip to prevent duplicates
-              for ZPART in "dl/${BASENAME}.zip"; do
-                [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
-              done
+              [ -f "dl/${BASENAME}.zip" ] && echo "${BASENAME}.zip" >> new_files.txt
               for ZPART in "dl/${BASENAME}".z[0-9]*; do
                 [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
               done
+            done
 
-            else
-              echo "File is under 95MB and no ZIP requested. Copying raw file..."
-              cp -f "$FILE" "dl/$BASENAME"
-              echo "$BASENAME" >> new_files.txt
-            fi
-          done
+          else
+            # ── Auto: ZIP only when >95MB, or when a password is set ─────────
+            for FILE in tmp_downloads/*; do
+              [ -f "$FILE" ] || continue
+              SIZE=$(stat -c%s "$FILE")
+              BASENAME=$(basename "$FILE")
+
+              rm -f "dl/${BASENAME}.zip" "dl/${BASENAME}".z[0-9]*
+
+              if [ -n "$HAS_PASS" ] || [ "$SIZE" -gt "$LIMIT" ]; then
+                echo "Zipping/Splitting: $BASENAME"
+
+                zip $PASS_ARG -s 95m "dl/${BASENAME}.zip" -j "$FILE"
+
+                # .zip first, then numbered split parts (.z01, .z02, …)
+                # z[0-9]* intentionally excludes .zip to prevent duplicates
+                [ -f "dl/${BASENAME}.zip" ] && echo "${BASENAME}.zip" >> new_files.txt
+                for ZPART in "dl/${BASENAME}".z[0-9]*; do
+                  [ -f "$ZPART" ] && basename "$ZPART" >> new_files.txt
+                done
+              else
+                echo "File is under 95MB and no ZIP requested. Copying raw file..."
+                cp -f "$FILE" "dl/$BASENAME"
+                echo "$BASENAME" >> new_files.txt
+              fi
+            done
+          fi
+
           rm -rf tmp_downloads
 
       - name: Update Links.md
