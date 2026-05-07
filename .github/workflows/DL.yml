@@ -23,7 +23,7 @@ on:
           - 'Audio MP3'
           - 'Best'
       subtitles:
-        description: 'Subtitles — embed into video (MP4 only)'
+        description: 'Subtitles — embed into video'
         required: false
         type: choice
         default: 'None'
