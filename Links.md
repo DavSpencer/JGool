@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-07 19:50 IR
+- 🗜️ [Master These 10 Skills Before 25 or Stay Average Forever [EN-FA]+1more_20260507_1950.zip](https://github.com/DavSpencer/JGool/raw/main/dl/Master%20These%2010%20Skills%20Before%2025%20or%20Stay%20Average%20Forever%20%5BEN-FA%5D%2B1more_20260507_1950.zip) `44.4MB`
+
+---
+
+
 ### 📅 2026-05-06 20:09 IR
 - 🎬 [توماس آلوا ادیسون، عاشق بی قرار ثبت کردن اختراعات بنام خودش.webm](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%AA%D9%88%D9%85%D8%A7%D8%B3%20%D8%A2%D9%84%D9%88%D8%A7%20%D8%A7%D8%AF%DB%8C%D8%B3%D9%88%D9%86%D8%8C%20%D8%B9%D8%A7%D8%B4%D9%82%20%D8%A8%DB%8C%20%D9%82%D8%B1%D8%A7%D8%B1%20%D8%AB%D8%A8%D8%AA%20%DA%A9%D8%B1%D8%AF%D9%86%20%D8%A7%D8%AE%D8%AA%D8%B1%D8%A7%D8%B9%D8%A7%D8%AA%20%D8%A8%D9%86%D8%A7%D9%85%20%D8%AE%D9%88%D8%AF%D8%B4.webm) `26.9MB`
 
