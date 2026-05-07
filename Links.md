@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-07 22:21 IR
+- 🎬 [HTTP vs HTTPS vs SSL vs TLS — How Secure Web Actually Works [EN-FA].webm](https://github.com/DavSpencer/JGool/raw/main/dl/HTTP%20vs%20HTTPS%20vs%20SSL%20vs%20TLS%20%E2%80%94%20How%20Secure%20Web%20Actually%20Works%20%5BEN-FA%5D.webm) `10.5MB`
+
+---
+
+
 ### 📅 2026-05-07 20:17 IR
 - 🎬 [STOP Lifting Weights： THESE 6 Exercises Build More Muscle [EN-FA].webm](https://github.com/DavSpencer/JGool/raw/main/dl/STOP%20Lifting%20Weights%EF%BC%9A%20THESE%206%20Exercises%20Build%20More%20Muscle%20%5BEN-FA%5D.webm) `19.5MB`
 
