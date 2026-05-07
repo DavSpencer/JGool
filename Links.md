@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-07 22:35 IR
+- 📱 [Telegram.apk](https://github.com/DavSpencer/JGool/raw/main/dl/Telegram.apk) `77.9MB`
+
+---
+
+
 ### 📅 2026-05-07 22:21 IR
 - 🎬 [HTTP vs HTTPS vs SSL vs TLS — How Secure Web Actually Works [EN-FA].webm](https://github.com/DavSpencer/JGool/raw/main/dl/HTTP%20vs%20HTTPS%20vs%20SSL%20vs%20TLS%20%E2%80%94%20How%20Secure%20Web%20Actually%20Works%20%5BEN-FA%5D.webm) `10.5MB`
 
