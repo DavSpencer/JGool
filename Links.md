@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-07 20:17 IR
+- 🎬 [STOP Lifting Weights： THESE 6 Exercises Build More Muscle [EN-FA].webm](https://github.com/DavSpencer/JGool/raw/main/dl/STOP%20Lifting%20Weights%EF%BC%9A%20THESE%206%20Exercises%20Build%20More%20Muscle%20%5BEN-FA%5D.webm) `19.5MB`
+
+---
+
+
 ### 📅 2026-05-07 19:50 IR
 - 🗜️ [Master These 10 Skills Before 25 or Stay Average Forever [EN-FA]+1more_20260507_1950.zip](https://github.com/DavSpencer/JGool/raw/main/dl/Master%20These%2010%20Skills%20Before%2025%20or%20Stay%20Average%20Forever%20%5BEN-FA%5D%2B1more_20260507_1950.zip) `44.4MB`
 
