@@ -29,10 +29,3 @@
 - 🗜️ [طولانی ترین ، عجیب ترین و خطرناک ترین پل دنیا.mp4.z05](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%B7%D9%88%D9%84%D8%A7%D9%86%DB%8C%20%D8%AA%D8%B1%DB%8C%D9%86%20%D8%8C%20%D8%B9%D8%AC%DB%8C%D8%A8%20%D8%AA%D8%B1%DB%8C%D9%86%20%D9%88%20%D8%AE%D8%B7%D8%B1%D9%86%D8%A7%DA%A9%20%D8%AA%D8%B1%DB%8C%D9%86%20%D9%BE%D9%84%20%D8%AF%D9%86%DB%8C%D8%A7.mp4.z05) `95.0MB`
 
 ---
-
-
-### 📅 2026-05-05 20:53 IR
-- 📱 [SFA-1.13.11-arm64-v8a.apk](https://github.com/DavSpencer/JGool/raw/main/dl/SFA-1.13.11-arm64-v8a.apk) `26.9MB`
-
----
-
