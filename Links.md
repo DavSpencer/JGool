@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-09 22:25 IR
+- 🎬 [کباب و تاریخچه طول و دراز آن، براستی کباب از کجا آمده است؟ [FA].webm](https://github.com/DavSpencer/JGool/raw/main/dl/%DA%A9%D8%A8%D8%A7%D8%A8%20%D9%88%20%D8%AA%D8%A7%D8%B1%DB%8C%D8%AE%DA%86%D9%87%20%D8%B7%D9%88%D9%84%20%D9%88%20%D8%AF%D8%B1%D8%A7%D8%B2%20%D8%A2%D9%86%D8%8C%20%D8%A8%D8%B1%D8%A7%D8%B3%D8%AA%DB%8C%20%DA%A9%D8%A8%D8%A7%D8%A8%20%D8%A7%D8%B2%20%DA%A9%D8%AC%D8%A7%20%D8%A2%D9%85%D8%AF%D9%87%20%D8%A7%D8%B3%D8%AA%D8%9F%20%5BFA%5D.webm) `85.3MB`
+
+---
+
+
 ### 📅 2026-05-08 20:14 IR
 - 🎬 [آموزش CCNA ｜ Distance Metric در مسیریابی روی روترهای سیسکو.webm](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%A2%D9%85%D9%88%D8%B2%D8%B4%20CCNA%20%EF%BD%9C%20Distance%20Metric%20%D8%AF%D8%B1%20%D9%85%D8%B3%DB%8C%D8%B1%DB%8C%D8%A7%D8%A8%DB%8C%20%D8%B1%D9%88%DB%8C%20%D8%B1%D9%88%D8%AA%D8%B1%D9%87%D8%A7%DB%8C%20%D8%B3%DB%8C%D8%B3%DA%A9%D9%88.webm) `21.6MB`
 
