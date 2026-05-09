@@ -8,12 +8,6 @@
 ---
 
 
-### 📅 2026-05-09 09:16 IR
-- 🎬 [4c9c.mp4](https://github.com/DavSpencer/JGool/raw/main/dl/4c9c.mp4) `2.2MB`
-
----
-
-
 ### 📅 2026-05-08 20:14 IR
 - 🎬 [آموزش CCNA ｜ Distance Metric در مسیریابی روی روترهای سیسکو.webm](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%A2%D9%85%D9%88%D8%B2%D8%B4%20CCNA%20%EF%BD%9C%20Distance%20Metric%20%D8%AF%D8%B1%20%D9%85%D8%B3%DB%8C%D8%B1%DB%8C%D8%A7%D8%A8%DB%8C%20%D8%B1%D9%88%DB%8C%20%D8%B1%D9%88%D8%AA%D8%B1%D9%87%D8%A7%DB%8C%20%D8%B3%DB%8C%D8%B3%DA%A9%D9%88.webm) `21.6MB`
 
