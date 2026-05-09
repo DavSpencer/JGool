@@ -72,7 +72,3 @@
 - 🎬 [آموزش CCNA ｜ پیکربندی SNMP (Simple Network Management Protocol).webm](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%A2%D9%85%D9%88%D8%B2%D8%B4%20CCNA%20%EF%BD%9C%20%D9%BE%DB%8C%DA%A9%D8%B1%D8%A8%D9%86%D8%AF%DB%8C%20SNMP%20%28Simple%20Network%20Management%20Protocol%29.webm) `11.0MB`
 
 - 🎬 [آموزش جامع سیسکو - معرفی سوئیچ و نحوه اتصال کنسول.webm](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%A2%D9%85%D9%88%D8%B2%D8%B4%20%D8%AC%D8%A7%D9%85%D8%B9%20%D8%B3%DB%8C%D8%B3%DA%A9%D9%88%20-%20%D9%85%D8%B9%D8%B1%D9%81%DB%8C%20%D8%B3%D9%88%D8%A6%DB%8C%DA%86%20%D9%88%20%D9%86%D8%AD%D9%88%D9%87%20%D8%A7%D8%AA%D8%B5%D8%A7%D9%84%20%DA%A9%D9%86%D8%B3%D9%88%D9%84.webm) `32.2MB`
-
-- 🎬 [انواع کابل شبکه و تجهیزات شبکه ｜ Cat1 تا Cat8، فیبر نوری، سوکت و کیستون ｜ آموزش کامل شبکه.webm](https://github.com/DavSpencer/JGool/raw/main/dl/%D8%A7%D9%86%D9%88%D8%A7%D8%B9%20%DA%A9%D8%A7%D8%A8%D9%84%20%D8%B4%D8%A8%DA%A9%D9%87%20%D9%88%20%D8%AA%D8%AC%D9%87%DB%8C%D8%B2%D8%A7%D8%AA%20%D8%B4%D8%A8%DA%A9%D9%87%20%EF%BD%9C%20Cat1%20%D8%AA%D8%A7%20Cat8%D8%8C%20%D9%81%DB%8C%D8%A8%D8%B1%20%D9%86%D9%88%D8%B1%DB%8C%D8%8C%20%D8%B3%D9%88%DA%A9%D8%AA%20%D9%88%20%DA%A9%DB%8C%D8%B3%D8%AA%D9%88%D9%86%20%EF%BD%9C%20%D8%A2%D9%85%D9%88%D8%B2%D8%B4%20%DA%A9%D8%A7%D9%85%D9%84%20%D8%B4%D8%A8%DA%A9%D9%87.webm) `16.1MB`
-
-
