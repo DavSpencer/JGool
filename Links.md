@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-09 10:49 IR
+- 📥 [Throne-1.1.2-windows64-installer.exe](https://github.com/DavSpencer/JGool/raw/main/dl/Throne-1.1.2-windows64-installer.exe) `40.2MB`
+
+---
+
+
 ### 📅 2026-05-09 09:16 IR
 - 🎬 [4c9c.mp4](https://github.com/DavSpencer/JGool/raw/main/dl/4c9c.mp4) `2.2MB`
 
