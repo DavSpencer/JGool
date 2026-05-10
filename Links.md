@@ -1,13 +1,6 @@
 ## 🔗 Direct Download Links
 > Click on any link below to start downloading directly.<br><br/>
 
-
-### 📅 2026-05-10 11:00 IR
-- 🗜️ [BT3-SoundTrack.zip+1more_20260510_1100.zip](https://github.com/DavSpencer/JGool/raw/main/dl/BT3-SoundTrack.zip%2B1more_20260510_1100.zip) `24.5MB`
-
----
-
-
 ### 📅 2026-05-09 22:29 IR
 - 🎬 [Weird Theory About People That Might Be True ｜ Body Language Expert #humanbehavior #bodylanguage [EN].webm](https://github.com/DavSpencer/JGool/raw/main/dl/Weird%20Theory%20About%20People%20That%20Might%20Be%20True%20%EF%BD%9C%20Body%20Language%20Expert%20%23humanbehavior%20%23bodylanguage%20%5BEN%5D.webm) `56.8MB`
 
