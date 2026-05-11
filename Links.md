@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-11 15:36 IR
+- 📥 [Throne-1.1.2-windows64-installer.exe](https://github.com/DavSpencer/JGool/raw/main/dl/Throne-1.1.2-windows64-installer.exe) `40.2MB`
+
+---
+
+
 ### 📅 2026-05-11 14:19 IR
 - 🗜️ [Hiddify-Android-universal.apk.zip](https://github.com/DavSpencer/JGool/raw/main/dl/Hiddify-Android-universal.apk.zip) `25.5MB`
 
