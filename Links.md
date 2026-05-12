@@ -1,24 +1,6 @@
 ## 🔗 Direct Download Links
 > Click on any link below to start downloading directly.<br><br/>
 
-
-### 📅 2026-05-12 09:43 IR
-- 📱 [WhiteDNS-1.2.0-arm64-v8a.apk](https://github.com/DavSpencer/JGool/raw/main/dl/WhiteDNS-1.2.0-arm64-v8a.apk) `5.1MB`
-
----
-
-
-### 📅 2026-05-11 17:36 IR
-- 📱 [range-scout-v0.1.2-arm64-v8a-signed.apk](https://github.com/DavSpencer/JGool/raw/main/dl/range-scout-v0.1.2-arm64-v8a-release-signed.apk) `9.8MB`
-
----
-
-
-### 📅 2026-05-11 15:36 IR
-- 📥 [Throne-1.1.2-windows64-installer.exe](https://github.com/DavSpencer/JGool/raw/main/dl/Throne-1.1.2-windows64-installer.exe) `40.2MB`
-
----
-
 ### 📅 2026-05-10 13:48 IR
 - 📱 [v2rayNG_2.0.18_universal.apk](https://github.com/DavSpencer/JGool/raw/main/dl/v2rayNG_2.0.18_universal.apk) `61.7MB`
 
