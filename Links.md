@@ -2,19 +2,6 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
-### 📅 2026-05-12 20:07 IR
-- 🗜️ [BraveBrowserStandaloneSetup.exe.zip](https://github.com/DavSpencer/JGool/raw/main/dl/BraveBrowserStandaloneSetup.exe.zip) `47.9MB`
-
-- 🗜️ [BraveBrowserStandaloneSetup.exe.z01](https://github.com/DavSpencer/JGool/raw/main/dl/BraveBrowserStandaloneSetup.exe.z01) `95.0MB`
-
----
-
-
-### 📅 2026-05-12 16:01 IR
-- 🎬 [P2JB Kernel Exploit Released up to 12.70 on the PS5. [EN-FA].webm](https://github.com/DavSpencer/JGool/raw/main/dl/P2JB%20Kernel%20Exploit%20Released%20up%20to%2012.70%20on%20the%20PS5.%20%5BEN-FA%5D.webm) `32.3MB`
-
----
-
 ### 📅 2026-05-10 13:48 IR
 - 📱 [v2rayNG_2.0.18_universal.apk](https://github.com/DavSpencer/JGool/raw/main/dl/v2rayNG_2.0.18_universal.apk) `61.7MB`
 
