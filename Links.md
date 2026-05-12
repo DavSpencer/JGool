@@ -2,6 +2,12 @@
 > Click on any link below to start downloading directly.<br><br/>
 
 
+### 📅 2026-05-12 09:43 IR
+- 📱 [WhiteDNS-1.2.0-arm64-v8a.apk](https://github.com/DavSpencer/JGool/raw/main/dl/WhiteDNS-1.2.0-arm64-v8a.apk) `5.1MB`
+
+---
+
+
 ### 📅 2026-05-11 17:36 IR
 - 📱 [range-scout-v0.1.2-arm64-v8a-signed.apk](https://github.com/DavSpencer/JGool/raw/main/dl/range-scout-v0.1.2-arm64-v8a-release-signed.apk) `9.8MB`
 
