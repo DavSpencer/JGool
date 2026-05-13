@@ -7,14 +7,6 @@
 
 ---
 
-
-### 📅 2026-05-13 20:48 IR
-- 🎬 [ChMDTagEWPkGryw3.mp4](https://github.com/DavSpencer/JGool/raw/main/dl/ChMDTagEWPkGryw3.mp4) `4.1MB`
-
----
-
-
-
 ### 📅 2026-05-10 13:48 IR
 - 📱 [v2rayNG_2.0.18_universal.apk](https://github.com/DavSpencer/JGool/raw/main/dl/v2rayNG_2.0.18_universal.apk) `61.7MB`
 
